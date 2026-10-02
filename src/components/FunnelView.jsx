@@ -142,7 +142,7 @@ export default function FunnelView({ role, metrics, setMetrics }) {
           <div className="flex-1 bg-bg-main p-4 rounded-xl border border-border">
             <p className="text-[10px] text-text-muted uppercase tracking-widest text-center mb-1">Conversão Geral</p>
             <p className="text-2xl font-bold text-[#f97316] text-center">{totalConversion.toFixed(1)}%</p>
-            <p className="text-[10px] text-text-muted text-center mt-1">{topValue} início -> {bottomValue} fim</p>
+            <p className="text-[10px] text-text-muted text-center mt-1">{topValue} início - {bottomValue} fim</p>
           </div>
           <div className="flex-1 bg-bg-main p-4 rounded-xl border border-[#10b981]/30">
             <p className="text-[10px] text-text-muted uppercase tracking-widest text-center mb-1">Faturamento Gerado</p>
