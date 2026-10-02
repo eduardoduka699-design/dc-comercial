@@ -1,36 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import { Target, Users, Phone, Star, Calendar, CheckSquare, FileText, CheckCircle2 } from 'lucide-react';
 
-const funnelConfigs = {
-  sdr: {
-    title: 'Funil Lei Seca — SDR (Recepção)',
-    stages: [
-      { id: 'leadsRecebidos', label: 'Leads (Multas)', icon: Users, color: 'bg-[#f59e0b]' },
-      { id: 'motoristasContatados', label: 'Contatados (WhatsApp)', icon: Phone, color: 'bg-[#f97316]', benchmark: [60, 80], benchmarkText: '60-80% respondem' },
-      { id: 'casosQualificados', label: 'Casos Qualificados', icon: Star, color: 'bg-[#eab308]', benchmark: [30, 50], benchmarkText: '30-50% têm perfil de recurso' },
-      { id: 'consultasAgendadas', label: 'Consultas Agendadas', icon: Calendar, color: 'bg-[#10b981]', benchmark: [50, 70], benchmarkText: '50-70% agendam consulta' }
-    ]
-  },
-  bdr: {
-    title: 'Funil Lei Seca — BDR (Prospecção)',
-    stages: [
-      { id: 'processosMapeados', label: 'Processos Encontrados', icon: Users, color: 'bg-[#f59e0b]' },
-      { id: 'contatosAtivos', label: 'Contatos Ativos', icon: Phone, color: 'bg-[#f97316]', benchmark: [5, 15], benchmarkText: '5-15% conectam' },
-      { id: 'consultasAgendadasOut', label: 'Consultas Agendadas', icon: Calendar, color: 'bg-[#eab308]', benchmark: [10, 20], benchmarkText: '10-20% agendam consulta' },
-      { id: 'casosQualificadosOut', label: 'Casos Qualificados', icon: CheckSquare, color: 'bg-[#10b981]', benchmark: [60, 80], benchmarkText: '60-80% são viáveis' }
-    ]
-  },
-  closer: {
-    title: 'Funil Lei Seca — Closer (Especialista)',
-    stages: [
-      { id: 'consultasRealizadas', label: 'Consultas Realizadas', icon: Star, color: 'bg-[#f59e0b]' },
-      { id: 'contratosEnviados', label: 'Contratos Enviados', icon: FileText, color: 'bg-[#f97316]', benchmark: [60, 75], benchmarkText: '60-75% recebem contrato' },
-      { id: 'contratosFechados', label: 'Contratos Fechados', icon: CheckCircle2, color: 'bg-[#10b981]', benchmark: [20, 30], benchmarkText: '20-30% fecham honorários' }
-    ]
-  }
-};
-
 export default function FunnelView({ role }) {
+  const funnelType = localStorage.getItem('dc-leiseca-funnel-type') || 'com_reuniao';
+
+  const funnelConfigs = {
+    sdr: {
+      title: 'Funil Lei Seca — SDR (Recepção)',
+      stages: [
+        { id: 'leadsRecebidos', label: 'Leads (Multas)', icon: Users, color: 'bg-[#f59e0b]' },
+        { id: 'motoristasContatados', label: 'Contatados (WhatsApp)', icon: Phone, color: 'bg-[#f97316]', benchmark: [60, 80], benchmarkText: '60-80% respondem' },
+        { id: 'casosQualificados', label: 'Casos Qualificados', icon: Star, color: 'bg-[#eab308]', benchmark: [30, 50], benchmarkText: '30-50% têm perfil de recurso' },
+        ...(funnelType === 'com_reuniao' ? [
+          { id: 'consultasAgendadas', label: 'Consultas Agendadas', icon: Calendar, color: 'bg-[#10b981]', benchmark: [50, 70], benchmarkText: '50-70% agendam consulta' }
+        ] : [])
+      ]
+    },
+    bdr: {
+      title: 'Funil Lei Seca — BDR (Prospecção)',
+      stages: [
+        { id: 'processosMapeados', label: 'Processos Encontrados', icon: Users, color: 'bg-[#f59e0b]' },
+        { id: 'contatosAtivos', label: 'Contatos Ativos', icon: Phone, color: 'bg-[#f97316]', benchmark: [5, 15], benchmarkText: '5-15% conectam' },
+        ...(funnelType === 'com_reuniao' ? [
+          { id: 'consultasAgendadasOut', label: 'Consultas Agendadas', icon: Calendar, color: 'bg-[#eab308]', benchmark: [10, 20], benchmarkText: '10-20% agendam consulta' }
+        ] : []),
+        { id: 'casosQualificadosOut', label: 'Casos Qualificados', icon: CheckSquare, color: 'bg-[#10b981]', benchmark: [60, 80], benchmarkText: '60-80% são viáveis' }
+      ]
+    },
+    closer: {
+      title: 'Funil Lei Seca — Closer (Especialista)',
+      stages: [
+        ...(funnelType === 'com_reuniao' ? [
+          { id: 'consultasRealizadas', label: 'Consultas Realizadas', icon: Star, color: 'bg-[#f59e0b]' }
+        ] : [
+          { id: 'casosQualificados', label: 'Casos Qualificados Repassados', icon: Star, color: 'bg-[#f59e0b]' }
+        ]),
+        { id: 'contratosEnviados', label: 'Contratos Enviados', icon: FileText, color: 'bg-[#f97316]', benchmark: [funnelType === 'com_reuniao' ? 60 : 80, funnelType === 'com_reuniao' ? 75 : 95], benchmarkText: funnelType === 'com_reuniao' ? '60-75% recebem contrato' : '80-95% recebem proposta no Wpp' },
+        { id: 'contratosFechados', label: 'Contratos Fechados', icon: CheckCircle2, color: 'bg-[#10b981]', benchmark: [funnelType === 'com_reuniao' ? 20 : 10, funnelType === 'com_reuniao' ? 30 : 20], benchmarkText: funnelType === 'com_reuniao' ? '20-30% fecham honorários' : '10-20% fecham direto no Wpp' }
+      ]
+    }
+  };
+
   const config = funnelConfigs[role];
   
   // Local state for funnel inputs

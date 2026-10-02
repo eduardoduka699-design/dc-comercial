@@ -2,10 +2,10 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, FileText, Settings, LogOut, Calculator, Target, Briefcase, Megaphone } from 'lucide-react';
 
-export default function Hub({ onLogout }) {
+export default function Hub({ onLogout, userRole }) {
   const navigate = useNavigate();
 
-  const sections = [
+  let sections = [
     {
       title: 'OPERAÇÕES PRINCIPAIS',
       modules: [
@@ -71,6 +71,23 @@ export default function Hub({ onLogout }) {
       ]
     }
   ];
+
+  if (userRole === 'Admin Supremo' || userRole === 'Gestor') {
+    sections.push({
+      title: 'CONFIGURAÇÕES DO SISTEMA',
+      modules: [
+        {
+          id: 'admin',
+          tag: 'MASTER',
+          title: 'PAINEL ADMINISTRATIVO',
+          subtitle: 'USUÁRIOS E PERMISSÕES',
+          icon: Settings,
+          locked: false,
+          path: '/admin'
+        }
+      ]
+    });
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans overflow-x-hidden" translate="no">

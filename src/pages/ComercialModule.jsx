@@ -81,10 +81,14 @@ export default function ComercialModule() {
     if (dateFilter === 'Hoje' || customDate) multiplier = 0.05; // Simulate 1 day (1/20 of month)
     if (dateFilter === 'Semana') multiplier = 0.25; // Simulate 1 week
     
+    const funnelType = localStorage.getItem('dc-leiseca-funnel-type') || 'com_reuniao';
     const adjusted = { ...metrics };
     const current = adjusted[activeTab];
     const newMetrics = {};
     Object.keys(current).forEach(k => {
+      if (funnelType === 'sem_reuniao' && (k === 'consultasAgendadas' || k === 'consultasRealizadas')) {
+        return;
+      }
       if (k.includes('honorarios') || k.includes('Ticket')) {
         newMetrics[k] = current[k]; // Averages don't multiply
       } else {
