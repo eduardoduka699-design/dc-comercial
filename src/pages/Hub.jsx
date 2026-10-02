@@ -85,10 +85,13 @@ export default function Hub({ onLogout, userRole }) {
       {/* Navbar Minimalista */}
       <nav className="h-16 flex items-center justify-between px-8 bg-gradient-to-b from-black/80 to-transparent">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-brand-blue rounded-md flex items-center justify-center shadow-[0_0_15px_rgba(0,112,243,0.5)]">
-            <span className="font-display font-bold text-white text-sm">DC</span>
+          <div className="w-9 h-9 bg-brand-blue rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(0,112,243,0.3)]">
+            <span className="font-bold text-white text-sm">DC</span>
           </div>
-          <h1 className="font-display font-bold text-lg tracking-wider uppercase text-white/90">Hub Central</h1>
+          <div className="flex flex-col justify-center">
+            <h1 className="font-bold text-xl leading-none tracking-tight text-white">DashClient</h1>
+            <span className="text-[9px] tracking-[0.2em] text-white/50 font-bold uppercase mt-1 leading-none">Gabriel Vidal</span>
+          </div>
         </div>
         <button 
           onClick={onLogout}

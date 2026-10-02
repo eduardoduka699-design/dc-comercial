@@ -64,8 +64,14 @@ export default function Login({ onLogin }) {
 
       <div className="w-full max-w-md bg-bg-card border border-border rounded-3xl p-8 md:p-12 shadow-2xl relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
         <div className="flex justify-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-brand-blue to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-brand-blue/20">
-            <span className="font-display font-bold text-white text-3xl tracking-tighter">DC</span>
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-brand-blue rounded-2xl flex items-center justify-center shadow-lg shadow-brand-blue/20">
+              <span className="font-bold text-white text-2xl tracking-tighter">DC</span>
+            </div>
+            <div className="flex flex-col justify-center text-left">
+              <h1 className="font-bold text-3xl leading-none tracking-tight text-white">DashClient</h1>
+              <span className="text-[10px] tracking-[0.25em] text-white/50 font-bold uppercase mt-1 leading-none">Gabriel Vidal</span>
+            </div>
           </div>
         </div>
 

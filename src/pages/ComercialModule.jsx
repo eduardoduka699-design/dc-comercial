@@ -97,12 +97,12 @@ export default function ComercialModule() {
       {/* Sidebar */}
       <aside className={`w-64 flex-shrink-0 border-r ${isDarkMode ? 'border-white/10 bg-[#101010]' : 'border-gray-200 bg-white'} flex flex-col transition-colors duration-300`}>
         <div className="p-6 flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-          <div className="w-10 h-10 bg-gradient-to-br from-brand-blue to-blue-600 rounded-lg flex items-center justify-center font-display font-bold text-white text-xl shadow-lg shadow-brand-blue/20">
+          <div className="w-10 h-10 bg-brand-blue rounded-xl flex items-center justify-center font-bold text-white text-lg shadow-lg shadow-brand-blue/20">
             DC
           </div>
-          <div>
-            <h1 className="font-display font-bold text-lg leading-none tracking-tight">Comercial</h1>
-            <p className={`text-xs ${isDarkMode ? 'text-white/50' : 'text-gray-500'}`}>Lei Seca / Multas</p>
+          <div className="flex flex-col justify-center">
+            <h1 className="font-bold text-lg leading-none tracking-tight">DashClient</h1>
+            <span className={`text-[9px] tracking-widest font-bold uppercase mt-1 ${isDarkMode ? 'text-white/50' : 'text-gray-500'}`}>Gabriel Vidal</span>
           </div>
         </div>
 
