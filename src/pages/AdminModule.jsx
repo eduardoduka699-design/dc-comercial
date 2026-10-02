@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ShieldAlert, Users, UserPlus, Key, Trash2, Edit3, Loader2 } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, Users, UserPlus, Key, Trash2, Edit3, Loader2, Link2, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 export default function AdminModule() {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('usuarios'); // 'usuarios' ou 'integracoes'
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -12,8 +13,10 @@ export default function AdminModule() {
   const [novoUser, setNovoUser] = useState({ nome: '', usuario: '', senha: '', cargo: 'SDR' });
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (activeTab === 'usuarios') {
+      fetchUsers();
+    }
+  }, [activeTab]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -68,6 +71,13 @@ export default function AdminModule() {
     return new Date(dateString).toLocaleString('pt-BR');
   };
 
+  const crms = [
+    { id: 'kommo', name: 'Kommo (amoCRM)', icon: Link2 },
+    { id: 'rd', name: 'RD Station Marketing', icon: Link2 },
+    { id: 'pipedrive', name: 'Pipedrive', icon: Link2 },
+    { id: 'activecampaign', name: 'ActiveCampaign', icon: Link2 },
+  ];
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col" translate="no">
       {/* Barra superior */}
@@ -87,81 +97,144 @@ export default function AdminModule() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 w-full max-w-7xl mx-auto p-8 overflow-y-auto">
-        <div className="mb-10 flex justify-between items-end">
-          <div>
-            <h2 className="text-3xl font-display font-black mb-2">Controle de Acessos</h2>
-            <p className="text-white/50 max-w-2xl">
-              Gerencie quem pode acessar a plataforma. Dados sincronizados em tempo real com o Supabase.
-            </p>
+      <div className="flex flex-1 overflow-hidden">
+        
+        {/* Sidebar Local */}
+        <aside className="w-64 border-r border-white/10 bg-[#101010] flex flex-col shrink-0 p-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-4 px-3">Gestão Master</p>
+          <div className="space-y-2">
+            <button 
+              onClick={() => setActiveTab('usuarios')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-colors ${
+                activeTab === 'usuarios' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'text-white/50 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              <Users size={18} /> Usuários e Acessos
+            </button>
+            <button 
+              onClick={() => setActiveTab('integracoes')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-colors ${
+                activeTab === 'integracoes' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'text-white/50 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              <Settings size={18} /> Integrações (CRM)
+            </button>
           </div>
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(220,38,38,0.3)]"
-          >
-            <UserPlus size={20} /> Novo Usuário
-          </button>
-        </div>
+        </aside>
 
-        {/* Tabela de Usuários */}
-        <div className="bg-[#151515] border border-white/10 rounded-2xl overflow-hidden min-h-[400px]">
-          <div className="p-6 border-b border-white/10 flex items-center gap-3">
-            <Users size={24} className="text-red-500" />
-            <h3 className="text-lg font-bold text-white">Usuários Cadastrados ({usuarios.length})</h3>
-          </div>
+        {/* Content Area */}
+        <main className="flex-1 overflow-y-auto p-8">
           
-          {loading ? (
-            <div className="flex flex-col items-center justify-center h-64 text-white/50">
-              <Loader2 className="animate-spin mb-4 text-brand-blue" size={32} />
-              <p>Carregando usuários do banco de dados...</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-[#101010] text-white/50 font-bold uppercase tracking-wider text-[10px]">
-                  <tr>
-                    <th className="p-4 pl-6">Nome Completo</th>
-                    <th className="p-4">Login (Usuário)</th>
-                    <th className="p-4">Cargo / Função</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4">Último Acesso</th>
-                    <th className="p-4 text-right pr-6">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/10">
-                  {usuarios.map((user) => (
-                    <tr key={user.id} className="hover:bg-white/5 transition-colors group">
-                      <td className="p-4 pl-6 font-bold text-white">{user.nome}</td>
-                      <td className="p-4 text-white/60 font-mono text-xs">{user.usuario}</td>
-                      <td className="p-4">
-                        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest ${user.cargo === 'Admin Supremo' ? 'bg-red-500/20 text-red-500 border border-red-500/30' : 'bg-brand-blue/10 text-brand-blue border border-brand-blue/30'}`}>
-                          {user.cargo}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <span className={`flex items-center gap-2 text-xs font-bold ${user.status === 'Ativo' ? 'text-[#10b981]' : 'text-white/30'}`}>
-                          <div className={`w-2 h-2 rounded-full ${user.status === 'Ativo' ? 'bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-white/30'}`}></div>
-                          {user.status}
-                        </span>
-                      </td>
-                      <td className="p-4 text-white/40 text-xs">{formatDate(user.ultimo_acesso)}</td>
-                      <td className="p-4 text-right pr-6">
-                        <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {user.cargo !== 'Admin Supremo' && (
-                            <button onClick={() => removerUsuario(user.id, user.cargo)} className="text-white/50 hover:text-red-500 transition-colors" title="Excluir">
-                              <Trash2 size={16} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {activeTab === 'usuarios' && (
+            <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="mb-10 flex justify-between items-end">
+                <div>
+                  <h2 className="text-3xl font-display font-black mb-2">Controle de Acessos</h2>
+                  <p className="text-white/50 max-w-2xl">Gerencie quem pode acessar a plataforma. Dados sincronizados em tempo real.</p>
+                </div>
+                <button 
+                  onClick={() => setIsModalOpen(true)}
+                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(220,38,38,0.3)]"
+                >
+                  <UserPlus size={20} /> Novo Usuário
+                </button>
+              </div>
+
+              {/* Tabela de Usuários */}
+              <div className="bg-[#151515] border border-white/10 rounded-2xl overflow-hidden min-h-[400px]">
+                <div className="p-6 border-b border-white/10 flex items-center gap-3">
+                  <Users size={24} className="text-red-500" />
+                  <h3 className="text-lg font-bold text-white">Usuários Cadastrados ({usuarios.length})</h3>
+                </div>
+                
+                {loading ? (
+                  <div className="flex flex-col items-center justify-center h-64 text-white/50">
+                    <Loader2 className="animate-spin mb-4 text-brand-blue" size={32} />
+                    <p>Carregando usuários...</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-[#101010] text-white/50 font-bold uppercase tracking-wider text-[10px]">
+                        <tr>
+                          <th className="p-4 pl-6">Nome Completo</th>
+                          <th className="p-4">Login (Usuário)</th>
+                          <th className="p-4">Cargo / Função</th>
+                          <th className="p-4">Status</th>
+                          <th className="p-4">Último Acesso</th>
+                          <th className="p-4 text-right pr-6">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/10">
+                        {usuarios.map((user) => (
+                          <tr key={user.id} className="hover:bg-white/5 transition-colors group">
+                            <td className="p-4 pl-6 font-bold text-white">{user.nome}</td>
+                            <td className="p-4 text-white/60 font-mono text-xs">{user.usuario}</td>
+                            <td className="p-4">
+                              <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest ${user.cargo === 'Admin Supremo' ? 'bg-red-500/20 text-red-500 border border-red-500/30' : 'bg-brand-blue/10 text-brand-blue border border-brand-blue/30'}`}>
+                                {user.cargo}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <span className={`flex items-center gap-2 text-xs font-bold ${user.status === 'Ativo' ? 'text-[#10b981]' : 'text-white/30'}`}>
+                                <div className={`w-2 h-2 rounded-full ${user.status === 'Ativo' ? 'bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-white/30'}`}></div>
+                                {user.status}
+                              </span>
+                            </td>
+                            <td className="p-4 text-white/40 text-xs">{formatDate(user.ultimo_acesso)}</td>
+                            <td className="p-4 text-right pr-6">
+                              <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {user.cargo !== 'Admin Supremo' && (
+                                  <button onClick={() => removerUsuario(user.id, user.cargo)} className="text-white/50 hover:text-red-500 transition-colors" title="Excluir">
+                                    <Trash2 size={16} />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
           )}
-        </div>
-      </main>
+
+          {activeTab === 'integracoes' && (
+            <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="mb-10">
+                <h2 className="text-3xl font-display font-black mb-2 flex items-center gap-3">
+                  <Settings className="text-red-500" size={32} />
+                  Integrações (CRM)
+                </h2>
+                <p className="text-white/50 max-w-2xl">Gerencie as conexões do seu painel com outras ferramentas do ecossistema de vendas.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {crms.map(crm => {
+                  const Icon = crm.icon;
+                  return (
+                    <div key={crm.id} className="bg-[#151515] border border-white/10 rounded-2xl p-6 flex flex-col justify-between hover:border-white/20 transition-colors">
+                      <div>
+                        <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center mb-4">
+                          <Icon size={24} className="text-brand-blue" />
+                        </div>
+                        <h3 className="font-bold text-lg text-white mb-1">{crm.name}</h3>
+                        <p className="text-xs text-white/50 mb-6">Status: <span className="text-red-500 font-bold">Desconectado</span></p>
+                      </div>
+                      <button className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-colors">
+                        Configurar API
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+        </main>
+      </div>
 
       {/* Modal Novo Usuário */}
       {isModalOpen && (

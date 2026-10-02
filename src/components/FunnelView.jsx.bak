@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Target, Users, Phone, Star, Calendar, CheckSquare, FileText, CheckCircle2 } from 'lucide-react';
 
-export default function FunnelView({ role, metrics, setMetrics }) {
+export default function FunnelView({ role }) {
   const funnelType = localStorage.getItem('dc-leiseca-funnel-type') || 'com_reuniao';
 
   const funnelConfigs = {
@@ -42,22 +42,29 @@ export default function FunnelView({ role, metrics, setMetrics }) {
   };
 
   const config = funnelConfigs[role];
-  const roleMetrics = metrics[role] || {};
+  
+  // Local state for funnel inputs
+  const [funnelData, setFunnelData] = useState({});
+  const [ticketMedio, setTicketMedio] = useState(5000);
+
+  // Initialize data
+  useEffect(() => {
+    const initial = {};
+    config.stages.forEach((stage, index) => {
+      // Dummy descending values
+      initial[stage.id] = Math.max(100 - (index * 25), 5);
+    });
+    setFunnelData(initial);
+  }, [role]);
 
   const handleChange = (id, value) => {
-    setMetrics(prev => ({
-      ...prev,
-      [role]: {
-        ...prev[role],
-        [id]: Number(value)
-      }
-    }));
+    setFunnelData(prev => ({ ...prev, [id]: Number(value) }));
   };
 
   const calculateConversion = (currentIndex, val) => {
     if (currentIndex === 0) return null;
     const prevId = config.stages[currentIndex - 1].id;
-    const prevVal = roleMetrics[prevId] || 0;
+    const prevVal = funnelData[prevId];
     if (!prevVal || prevVal === 0) return 0;
     return (val / prevVal) * 100;
   };
@@ -68,31 +75,26 @@ export default function FunnelView({ role, metrics, setMetrics }) {
     return 'bad';
   };
 
-  const topValue = roleMetrics[config.stages[0]?.id] || 0;
-  const bottomValue = roleMetrics[config.stages[config.stages.length - 1]?.id] || 0;
+  const topValue = funnelData[config.stages[0]?.id] || 0;
+  const bottomValue = funnelData[config.stages[config.stages.length - 1]?.id] || 0;
   const totalConversion = topValue > 0 ? (bottomValue / topValue) * 100 : 0;
-  const ticketMedio = roleMetrics.honorariosMedios || 5000;
-  const roas = bottomValue * ticketMedio;
+  const roas = ticketMedio > 0 ? (bottomValue * ticketMedio) : 0;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
       {/* Left Column - Inputs */}
       <div className="bg-bg-card p-6 rounded-2xl border border-border">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <Users size={20} className="text-brand-blue" />
-            <h2 className="text-lg font-bold text-text-main">{config.title}</h2>
-          </div>
-          <span className="text-xs bg-brand-blue/20 text-brand-blue px-2 py-1 rounded">Lançamento de Resultados</span>
+        <div className="flex items-center gap-2 mb-6">
+          <Users size={20} className="text-brand-blue" />
+          <h2 className="text-lg font-bold text-text-main">{config.title}</h2>
         </div>
-        
-        <p className="text-xs text-text-muted mb-6">Insira os volumes reais alcançados neste mês para atualizar os gráficos do Dashboard automaticamente.</p>
+        <p className="text-xs text-text-muted mb-6">Ajuste os volumes reais esperados ou alcançados para cada etapa do atendimento comercial.</p>
 
         <div className="space-y-4">
           {config.stages.map((stage, index) => {
             const Icon = stage.icon;
-            const val = roleMetrics[stage.id] || 0;
+            const val = funnelData[stage.id] || 0;
             const conversion = calculateConversion(index, val);
             const status = getBenchmarkStatus(conversion, stage.benchmark);
 
@@ -105,7 +107,7 @@ export default function FunnelView({ role, metrics, setMetrics }) {
                   </div>
                   {conversion !== null && (
                     <span className={`text-xs font-bold ${status === 'good' ? 'text-[#10b981]' : 'text-[#f59e0b]'}`}>
-                      {conversion.toFixed(1)}% {status === 'good' ? 'ok.' : 'atenção'}
+                      {conversion.toFixed(1)}% {status === 'good' ? '✅' : '⚠️'}
                     </span>
                   )}
                 </div>
@@ -127,13 +129,13 @@ export default function FunnelView({ role, metrics, setMetrics }) {
 
         <div className="mt-8 pt-6 border-t border-border">
           <div className="flex justify-between items-end mb-2">
-            <label className="text-sm font-medium text-text-main">Ticket Médio (Vendas)</label>
-            <span className="text-xs font-bold text-[#f59e0b]">R$ {ticketMedio.toLocaleString('pt-BR')}</span>
+            <label className="text-sm font-medium text-text-main">Ticket Médio por Venda</label>
+            <span className="text-xs font-bold text-[#f59e0b]">R$ {ticketMedio.toLocaleString()}</span>
           </div>
           <input 
             type="number"
             value={ticketMedio}
-            onChange={(e) => handleChange('honorariosMedios', e.target.value)}
+            onChange={(e) => setTicketMedio(Number(e.target.value))}
             className="w-full bg-bg-main border border-border rounded-lg py-2.5 px-4 text-text-main font-medium focus:outline-none focus:border-brand-blue"
           />
         </div>
@@ -142,18 +144,18 @@ export default function FunnelView({ role, metrics, setMetrics }) {
           <div className="flex-1 bg-bg-main p-4 rounded-xl border border-border">
             <p className="text-[10px] text-text-muted uppercase tracking-widest text-center mb-1">Conversão Geral</p>
             <p className="text-2xl font-bold text-[#f97316] text-center">{totalConversion.toFixed(1)}%</p>
-            <p className="text-[10px] text-text-muted text-center mt-1">{topValue} início -> {bottomValue} fim</p>
+            <p className="text-[10px] text-text-muted text-center mt-1">{topValue} início → {bottomValue} fim</p>
           </div>
           <div className="flex-1 bg-bg-main p-4 rounded-xl border border-[#10b981]/30">
-            <p className="text-[10px] text-text-muted uppercase tracking-widest text-center mb-1">Faturamento Gerado</p>
-            <p className="text-2xl font-bold text-[#10b981] text-center">R$ {roas.toLocaleString('pt-BR')}</p>
+            <p className="text-[10px] text-text-muted uppercase tracking-widest text-center mb-1">Faturamento Estimado</p>
+            <p className="text-2xl font-bold text-[#10b981] text-center">R$ {roas.toLocaleString()}</p>
           </div>
         </div>
       </div>
 
       {/* Right Column - Visual Funnel */}
       <div className="bg-bg-card p-6 rounded-2xl border border-border flex flex-col">
-        <h3 className="text-sm font-bold text-text-main mb-8">Taxas de Conversão Reais</h3>
+        <h3 className="text-sm font-bold text-text-main mb-8">Taxas de Conversão</h3>
         
         {/* CSS Clip-Path Funnel */}
         <div className="flex-1 flex flex-col items-center justify-center py-8">
@@ -161,8 +163,8 @@ export default function FunnelView({ role, metrics, setMetrics }) {
             className="w-full max-w-[300px] h-[300px] flex flex-col"
             style={{ clipPath: 'polygon(0 0, 100% 0, 65% 100%, 35% 100%)' }}
           >
-            {config.stages.map((stage) => {
-              const val = roleMetrics[stage.id] || 0;
+            {config.stages.map((stage, index) => {
+              const val = funnelData[stage.id] || 0;
               const Icon = stage.icon;
               return (
                 <div key={stage.id} className={`flex-1 flex flex-col items-center justify-center ${stage.color}`}>
@@ -181,18 +183,18 @@ export default function FunnelView({ role, metrics, setMetrics }) {
           {config.stages.map((stage, index) => {
             if (index === 0) return null;
             const prevStage = config.stages[index - 1];
-            const conversion = calculateConversion(index, roleMetrics[stage.id] || 0);
+            const conversion = calculateConversion(index, funnelData[stage.id] || 0);
             const status = getBenchmarkStatus(conversion, stage.benchmark);
             const isGood = status === 'good';
             
             return (
               <div key={stage.id} className={`flex justify-between items-center p-3 rounded-lg border ${isGood ? 'border-[#10b981]/20 bg-[#10b981]/5' : 'border-[#f59e0b]/20 bg-[#f59e0b]/5'}`}>
                 <span className="text-xs text-text-muted">
-                  {prevStage.label} -> {stage.label}
+                  {prevStage.label} → {stage.label}
                 </span>
                 <div className="flex items-center gap-4">
                   <span className="text-[10px] text-text-muted">
-                    meta: {stage.benchmark ? `${stage.benchmark[0]}-${stage.benchmark[1]}%` : '-'}
+                    meta: {stage.benchmark[0]}-{stage.benchmark[1]}%
                   </span>
                   <span className={`text-xs font-bold ${isGood ? 'text-[#10b981]' : 'text-[#f59e0b]'}`}>
                     {conversion.toFixed(1)}%
@@ -204,7 +206,7 @@ export default function FunnelView({ role, metrics, setMetrics }) {
           
           <div className="flex justify-between items-center p-3 rounded-lg border border-[#f97316]/20 bg-[#f97316]/5 mt-4">
             <span className="text-xs font-bold text-text-main">
-              Conversão Geral ({config.stages[0].label} -> {config.stages[config.stages.length-1].label})
+              Conversão Geral ({config.stages[0].label} → {config.stages[config.stages.length-1].label})
             </span>
             <span className="text-xs font-bold text-[#f97316]">
               {totalConversion.toFixed(1)}%
