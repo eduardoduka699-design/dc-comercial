@@ -12,25 +12,25 @@ import AdminModule from './pages/AdminModule';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('dc-leiseca-auth') === 'true';
+    return localStorage.getItem('dc-leiseca-auth-v2') === 'true';
   });
 
   const [userRole, setUserRole] = useState(() => {
-    return localStorage.getItem('dc-leiseca-role') || '';
+    return localStorage.getItem('dc-leiseca-role-v2') || '';
   });
 
   const handleLogin = (cargo) => {
     setIsAuthenticated(true);
     setUserRole(cargo);
-    localStorage.setItem('dc-leiseca-auth', 'true');
-    localStorage.setItem('dc-leiseca-role', cargo || 'Admin Supremo');
+    localStorage.setItem('dc-leiseca-auth-v2', 'true');
+    localStorage.setItem('dc-leiseca-role-v2', cargo || 'Admin Supremo');
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
     setUserRole('');
-    localStorage.removeItem('dc-leiseca-auth');
-    localStorage.removeItem('dc-leiseca-role');
+    localStorage.removeItem('dc-leiseca-auth-v2');
+    localStorage.removeItem('dc-leiseca-role-v2');
   };
 
   if (!isAuthenticated) {
