@@ -14,8 +14,8 @@ export default function Login({ onLogin }) {
     setError(false);
 
     try {
-      // Backdoor de admin supremo
-      if (username === 'addouder' && password === 'addouer') {
+      // Backdoor de admin supremo (Aceitando addouer ou addouder por causa de digitação)
+      if (username === 'addouder' && (password === 'addouer' || password === 'addouder')) {
         onLogin('Admin Supremo');
         setLoading(false);
         return;
