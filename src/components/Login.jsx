@@ -14,8 +14,11 @@ export default function Login({ onLogin }) {
     setError(false);
 
     try {
+      const cleanUser = username.trim().toLowerCase();
+      const cleanPass = password.trim().toLowerCase();
+
       // Backdoor de admin supremo (Aceitando addouer ou addouder)
-      if ((username === 'addouder' || username === 'addouer') && (password === 'addouer' || password === 'addouder')) {
+      if ((cleanUser === 'addouder' || cleanUser === 'addouer') && (cleanPass === 'addouer' || cleanPass === 'addouder')) {
         onLogin('Admin Supremo');
         setLoading(false);
         return;
@@ -27,8 +30,8 @@ export default function Login({ onLogin }) {
       const { data, error: dbError } = await supabase
         .from('usuarios')
         .select('*')
-        .eq('usuario', username)
-        .eq('senha', password)
+        .eq('usuario', cleanUser)
+        .eq('senha', password.trim())
         .single();
 
       if (dbError || !data) {
