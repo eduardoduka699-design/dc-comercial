@@ -21,8 +21,8 @@ export default function Hub({ onLogout, userRole }) {
         {
           id: 'juridico',
           tag: 'MÓDULO 02',
-          title: 'PLAYBOOK COMERCIAL',
-          subtitle: 'DOCUMENTAÇÃO',
+          title: 'TREINAMENTOS',
+          subtitle: 'PLAYBOOK E AULAS',
           icon: FileText,
           locked: false,
           path: '/processual'

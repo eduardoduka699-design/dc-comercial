@@ -975,7 +975,7 @@ export default function ProcessualModule() {
           Voltar ao Hub Central
         </button>
         <div className="mx-auto font-display text-white font-bold tracking-widest text-sm bg-white/5 px-4 py-1 rounded-full border border-white/10">
-          Módulo 02 — Playbook Comercial
+          Módulo 02 — Treinamentos, Playbook e Aulas
         </div>
       </header>
 
@@ -984,7 +984,7 @@ export default function ProcessualModule() {
         <iframe 
           srcDoc={playbookHtml} 
           className="w-full h-full border-none" 
-          title="Playbook Comercial"
+          title="Treinamentos e Playbook"
         />
       </div>
     </div>
