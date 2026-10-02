@@ -103,7 +103,7 @@ export default function AdminModule() {
   };
 
   const crms = [
-    { id: 'flux', name: 'Flux CRM', icon: Zap, color: 'text-[#10b981]' },
+    { id: 'legendary', name: 'Legendary Hub (CRM)', icon: Zap, color: 'text-[#10b981]' },
     { id: 'kommo', name: 'Kommo (amoCRM)', icon: Link2, color: 'text-brand-blue' },
     { id: 'rd', name: 'RD Station Marketing', icon: Link2, color: 'text-[#f59e0b]' },
     { id: 'pipedrive', name: 'Pipedrive', icon: Link2, color: 'text-[#10b981]' },
