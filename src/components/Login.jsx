@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { Shield, ArrowRight, User, Lock, Zap, Loader2, UserPlus } from 'lucide-react';
+import { Shield, ArrowRight, User, Lock, Zap, Loader2, UserPlus, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
 export default function Login({ onLogin }) {
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  
   const [nome, setNome] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -21,7 +24,43 @@ export default function Login({ onLogin }) {
 
       if (!supabase) throw new Error('Supabase Client not initialized');
 
-      if (isRegistering) {
+      if (isResetting) {
+        if (!cleanUser || !cleanPass) {
+          setError('Preencha o usuário e a nova senha.');
+          setLoading(false);
+          return;
+        }
+
+        // Verifica se usuário existe
+        const { data: existing } = await supabase
+          .from('usuarios')
+          .select('id')
+          .eq('usuario', cleanUser)
+          .single();
+
+        if (!existing) {
+          setError('Usuário não encontrado.');
+          setLoading(false);
+          return;
+        }
+
+        // Atualiza a senha
+        const { error: updateError } = await supabase
+          .from('usuarios')
+          .update({ senha: cleanPass })
+          .eq('usuario', cleanUser);
+
+        if (updateError) {
+          setError('Erro ao redefinir a senha.');
+          setLoading(false);
+          return;
+        }
+
+        alert('Senha redefinida com sucesso! Faça login.');
+        setIsResetting(false);
+        setPassword('');
+        
+      } else if (isRegistering) {
         if (!nome.trim() || !cleanUser || !cleanPass) {
           setError('Preencha todos os campos.');
           setLoading(false);
@@ -102,6 +141,24 @@ export default function Login({ onLogin }) {
     setLoading(false);
   };
 
+  const getTitle = () => {
+    if (isResetting) return 'Redefinir Senha';
+    if (isRegistering) return 'Criar Conta';
+    return 'Acesso ao Portal';
+  };
+
+  const getSubtitle = () => {
+    if (isResetting) return 'Digite seu usuário e a nova senha desejada.';
+    if (isRegistering) return 'Preencha os dados para se cadastrar na equipe.';
+    return 'Insira suas credenciais para acessar o painel comercial.';
+  };
+
+  const getButtonText = () => {
+    if (isResetting) return <>Redefinir <KeyRound size={20} /></>;
+    if (isRegistering) return <>Cadastrar <UserPlus size={20} /></>;
+    return <>Entrar <ArrowRight size={20} /></>;
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg-main font-sans p-4 relative overflow-hidden" translate="no">
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-brand-blue/20 blur-[120px] rounded-full pointer-events-none"></div>
@@ -122,15 +179,15 @@ export default function Login({ onLogin }) {
 
         <div className="text-center mb-10">
           <h1 className="font-display text-3xl font-bold text-text-main tracking-tight mb-2">
-            {isRegistering ? 'Criar Conta' : 'Acesso ao Portal'}
+            {getTitle()}
           </h1>
           <p className="text-text-muted text-sm">
-            {isRegistering ? 'Preencha os dados para se cadastrar na equipe.' : 'Insira suas credenciais para acessar o painel comercial.'}
+            {getSubtitle()}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {isRegistering && (
+          {isRegistering && !isResetting && (
             <div className="animate-in fade-in slide-in-from-top-2">
               <label className="block text-xs font-bold text-text-muted uppercase tracking-widest mb-2 ml-1">Nome Completo</label>
               <div className="relative">
@@ -161,16 +218,34 @@ export default function Login({ onLogin }) {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-text-muted uppercase tracking-widest mb-2 ml-1">Senha</label>
+            <div className="flex items-center justify-between mb-2 ml-1">
+              <label className="block text-xs font-bold text-text-muted uppercase tracking-widest">{isResetting ? 'Nova Senha' : 'Senha'}</label>
+              {!isRegistering && !isResetting && (
+                <button 
+                  type="button" 
+                  onClick={() => { setIsResetting(true); setError(''); setPassword(''); }}
+                  className="text-xs text-brand-blue hover:text-blue-400 font-bold transition-colors"
+                >
+                  Esqueceu?
+                </button>
+              )}
+            </div>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
               <input 
-                type="password" 
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setError(''); }}
                 placeholder="••••••••"
-                className="w-full bg-bg-main border border-border rounded-xl py-3 pl-11 pr-4 text-text-main font-medium focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-all"
+                className="w-full bg-bg-main border border-border rounded-xl py-3 pl-11 pr-12 text-text-main font-medium focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-all"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-white transition-colors"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
 
@@ -183,23 +258,36 @@ export default function Login({ onLogin }) {
             disabled={loading}
             className="w-full bg-gradient-to-r from-brand-blue to-blue-600 hover:opacity-90 disabled:opacity-50 text-white font-display font-bold text-lg rounded-xl py-3.5 flex items-center justify-center gap-2 transition-all shadow-lg shadow-brand-blue/20 mt-4"
           >
-            {loading ? <Loader2 size={20} className="animate-spin" /> : (
-              isRegistering ? <>Cadastrar <UserPlus size={20} /></> : <>Entrar <ArrowRight size={20} /></>
-            )}
+            {loading ? <Loader2 size={20} className="animate-spin" /> : getButtonText()}
           </button>
         </form>
 
-        <div className="mt-8 text-center">
-          <button 
-            type="button"
-            onClick={() => {
-              setIsRegistering(!isRegistering);
-              setError('');
-            }}
-            className="text-sm text-text-muted hover:text-brand-blue font-medium transition-colors"
-          >
-            {isRegistering ? 'Já tem uma conta? Fazer login' : 'Primeiro acesso? Crie sua conta'}
-          </button>
+        <div className="mt-8 text-center flex flex-col gap-3">
+          {(isRegistering || isResetting) ? (
+            <button 
+              type="button"
+              onClick={() => {
+                setIsRegistering(false);
+                setIsResetting(false);
+                setError('');
+              }}
+              className="text-sm text-text-muted hover:text-brand-blue font-medium transition-colors"
+            >
+              Voltar para o Login
+            </button>
+          ) : (
+            <button 
+              type="button"
+              onClick={() => {
+                setIsRegistering(true);
+                setIsResetting(false);
+                setError('');
+              }}
+              className="text-sm text-text-muted hover:text-brand-blue font-medium transition-colors"
+            >
+              Primeiro acesso? Crie sua conta
+            </button>
+          )}
         </div>
 
         <div className="mt-6 pt-6 border-t border-border flex items-center justify-center gap-2 text-xs text-text-muted">
