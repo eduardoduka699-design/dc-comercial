@@ -63,7 +63,7 @@ export default function Hub({ onLogout, userRole }) {
     }
   ];
 
-  if (userRole === 'Admin Supremo' || userRole === 'Gestor') {
+  if (userRole === 'Admin Supremo' || userRole?.includes('Gestor')) {
     sections.push({
       title: 'CONFIGURAÇÕES DO SISTEMA',
       modules: [

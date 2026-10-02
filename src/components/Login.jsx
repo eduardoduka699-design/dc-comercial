@@ -11,6 +11,7 @@ export default function Login({ onLogin }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [cargo, setCargo] = useState('SDR');
+  const [isGestor, setIsGestor] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -81,8 +82,8 @@ export default function Login({ onLogin }) {
           return;
         }
 
-        // Se escolher Dono, salva como Admin Supremo para bater com as regras de permissão
-        const finalCargo = cargo === 'Dono' ? 'Admin Supremo' : cargo;
+        // Se for gestor, anexa o título ao cargo
+        const finalCargo = isGestor ? `${cargo} + Gestor` : cargo;
 
         // Cria o usuário com cargo selecionado
         const { data, error: insertError } = await supabase
@@ -217,8 +218,21 @@ export default function Login({ onLogin }) {
                   <option value="SDR">SDR (Pré-vendas)</option>
                   <option value="Closer">Closer (Fechamento)</option>
                   <option value="BDR">BDR (Prospecção)</option>
-                  <option value="Dono">Dono / Sócio</option>
                 </select>
+              </div>
+
+              <div className="flex items-center gap-3 bg-bg-main border border-border p-3 rounded-xl mt-2">
+                <input 
+                  type="checkbox" 
+                  id="gestor"
+                  checked={isGestor}
+                  onChange={(e) => setIsGestor(e.target.checked)}
+                  className="w-5 h-5 rounded border-border bg-bg-card checked:bg-brand-blue focus:ring-brand-blue cursor-pointer"
+                />
+                <label htmlFor="gestor" className="text-sm font-bold text-text-main cursor-pointer select-none flex-1">
+                  Sou Dono / Gestor da operação
+                  <span className="block text-xs font-normal text-text-muted">Isso concederá acesso total ao painel.</span>
+                </label>
               </div>
             </div>
           )}
