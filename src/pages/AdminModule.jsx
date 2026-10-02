@@ -1,16 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ShieldAlert, Users, UserPlus, Key, Trash2, Edit3, Loader2, Link2, Settings } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, Users, UserPlus, Key, Trash2, Edit3, Loader2, Link2, Settings, CheckCircle2, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 export default function AdminModule() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('usuarios'); // 'usuarios' ou 'integracoes'
+  const [activeTab, setActiveTab] = useState('usuarios');
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [novoUser, setNovoUser] = useState({ nome: '', usuario: '', senha: '', cargo: 'SDR' });
+  
+  // Integrações State
+  const [activeCrmModal, setActiveCrmModal] = useState(null);
+  const [apiKey, setApiKey] = useState('');
+  const [savedIntegrations, setSavedIntegrations] = useState(() => {
+    const saved = localStorage.getItem('dc-leiseca-integrations');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  useEffect(() => {
+    localStorage.setItem('dc-leiseca-integrations', JSON.stringify(savedIntegrations));
+  }, [savedIntegrations]);
 
   useEffect(() => {
     if (activeTab === 'usuarios') {
@@ -66,21 +78,39 @@ export default function AdminModule() {
     }
   };
 
+  const handleSaveApi = (e) => {
+    e.preventDefault();
+    if (apiKey.trim() === '') return;
+    setSavedIntegrations(prev => ({
+      ...prev,
+      [activeCrmModal]: apiKey
+    }));
+    setActiveCrmModal(null);
+    setApiKey('');
+  };
+
+  const handleDisconnectApi = (crmId) => {
+    if (window.confirm("Deseja realmente desconectar este CRM? Isso interromperá a atualização automática do funil.")) {
+      const updated = { ...savedIntegrations };
+      delete updated[crmId];
+      setSavedIntegrations(updated);
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'Nunca';
     return new Date(dateString).toLocaleString('pt-BR');
   };
 
   const crms = [
-    { id: 'kommo', name: 'Kommo (amoCRM)', icon: Link2 },
-    { id: 'rd', name: 'RD Station Marketing', icon: Link2 },
-    { id: 'pipedrive', name: 'Pipedrive', icon: Link2 },
-    { id: 'activecampaign', name: 'ActiveCampaign', icon: Link2 },
+    { id: 'flux', name: 'Flux CRM', icon: Zap, color: 'text-[#10b981]' },
+    { id: 'kommo', name: 'Kommo (amoCRM)', icon: Link2, color: 'text-brand-blue' },
+    { id: 'rd', name: 'RD Station Marketing', icon: Link2, color: 'text-[#f59e0b]' },
+    { id: 'pipedrive', name: 'Pipedrive', icon: Link2, color: 'text-[#10b981]' },
   ];
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col" translate="no">
-      {/* Barra superior */}
       <header className="h-16 border-b border-white/10 bg-black/50 backdrop-blur-md flex items-center justify-between px-6 shrink-0 z-50">
         <button 
           onClick={() => navigate('/')}
@@ -96,10 +126,7 @@ export default function AdminModule() {
         <div className="w-40 flex justify-end"></div>
       </header>
 
-      {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
-        
-        {/* Sidebar Local */}
         <aside className="w-64 border-r border-white/10 bg-[#101010] flex flex-col shrink-0 p-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-4 px-3">Gestão Master</p>
           <div className="space-y-2">
@@ -122,9 +149,7 @@ export default function AdminModule() {
           </div>
         </aside>
 
-        {/* Content Area */}
         <main className="flex-1 overflow-y-auto p-8">
-          
           {activeTab === 'usuarios' && (
             <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="mb-10 flex justify-between items-end">
@@ -140,7 +165,6 @@ export default function AdminModule() {
                 </button>
               </div>
 
-              {/* Tabela de Usuários */}
               <div className="bg-[#151515] border border-white/10 rounded-2xl overflow-hidden min-h-[400px]">
                 <div className="p-6 border-b border-white/10 flex items-center gap-3">
                   <Users size={24} className="text-red-500" />
@@ -208,24 +232,43 @@ export default function AdminModule() {
                   <Settings className="text-red-500" size={32} />
                   Integrações (CRM)
                 </h2>
-                <p className="text-white/50 max-w-2xl">Gerencie as conexões do seu painel com outras ferramentas do ecossistema de vendas.</p>
+                <p className="text-white/50 max-w-2xl">
+                  Conecte o DC Hub ao seu CRM para sincronizar funis, extrair métricas de leads e puxar faturamento (ganhos) automaticamente, ponta a ponta.
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {crms.map(crm => {
                   const Icon = crm.icon;
+                  const isConnected = !!savedIntegrations[crm.id];
+
                   return (
-                    <div key={crm.id} className="bg-[#151515] border border-white/10 rounded-2xl p-6 flex flex-col justify-between hover:border-white/20 transition-colors">
+                    <div key={crm.id} className={`bg-[#151515] border ${isConnected ? 'border-[#10b981]/30' : 'border-white/10'} rounded-2xl p-6 flex flex-col justify-between hover:border-white/20 transition-colors relative overflow-hidden`}>
+                      {isConnected && (
+                        <div className="absolute top-0 right-0 w-16 h-16 bg-[#10b981]/10 rounded-bl-[100%] flex items-start justify-end p-2 pointer-events-none">
+                          <CheckCircle2 size={16} className="text-[#10b981]" />
+                        </div>
+                      )}
+                      
                       <div>
                         <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center mb-4">
-                          <Icon size={24} className="text-brand-blue" />
+                          <Icon size={24} className={crm.color} />
                         </div>
                         <h3 className="font-bold text-lg text-white mb-1">{crm.name}</h3>
-                        <p className="text-xs text-white/50 mb-6">Status: <span className="text-red-500 font-bold">Desconectado</span></p>
+                        <p className="text-xs text-white/50 mb-6">
+                          Status: {isConnected ? <span className="text-[#10b981] font-bold">Conectado (Sincronizando)</span> : <span className="text-red-500 font-bold">Desconectado</span>}
+                        </p>
                       </div>
-                      <button className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-colors">
-                        Configurar API
-                      </button>
+                      
+                      {isConnected ? (
+                        <button onClick={() => handleDisconnectApi(crm.id)} className="w-full py-3 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-xl text-sm font-bold transition-colors">
+                          Desconectar
+                        </button>
+                      ) : (
+                        <button onClick={() => setActiveCrmModal(crm.id)} className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-colors">
+                          Configurar API
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -274,6 +317,45 @@ export default function AdminModule() {
           </div>
         </div>
       )}
+
+      {/* Modal API CRM */}
+      {activeCrmModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={() => setActiveCrmModal(null)}>
+          <div className="bg-[#151515] border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
+                <Link2 size={20} className="text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-display font-bold text-white">Conectar {crms.find(c => c.id === activeCrmModal)?.name}</h3>
+                <p className="text-xs text-white/50">Autorize o Hub a ler os dados ponta a ponta.</p>
+              </div>
+            </div>
+            
+            <form onSubmit={handleSaveApi} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2 block">Chave de Integração (API Key / Token)</label>
+                <input 
+                  required 
+                  type="text" 
+                  value={apiKey} 
+                  onChange={e => setApiKey(e.target.value)} 
+                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white font-mono focus:outline-none focus:border-[#10b981] transition-colors" 
+                  placeholder="Cole sua chave aqui..." 
+                />
+                <p className="text-[10px] text-white/30 mt-2">Você encontra essa chave nas configurações de desenvolvedor/integração do seu CRM.</p>
+              </div>
+              <div className="flex gap-4 mt-8">
+                <button type="button" onClick={() => { setActiveCrmModal(null); setApiKey(''); }} className="flex-1 bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-colors">Cancelar</button>
+                <button type="submit" className="flex-1 bg-[#10b981] hover:bg-[#059669] text-white font-bold py-3 rounded-xl transition-colors flex justify-center items-center">
+                  Conectar CRM
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
