@@ -10,6 +10,7 @@ export default function Login({ onLogin }) {
   const [nome, setNome] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [cargo, setCargo] = useState('SDR');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -80,14 +81,17 @@ export default function Login({ onLogin }) {
           return;
         }
 
-        // Cria o usuário com cargo SDR por padrão
+        // Se escolher Dono, salva como Admin Supremo para bater com as regras de permissão
+        const finalCargo = cargo === 'Dono' ? 'Admin Supremo' : cargo;
+
+        // Cria o usuário com cargo selecionado
         const { data, error: insertError } = await supabase
           .from('usuarios')
           .insert([{
             nome: nome.trim(),
             usuario: cleanUser,
             senha: cleanPass,
-            cargo: 'SDR', // Default role para auto-cadastro
+            cargo: finalCargo,
             status: 'Ativo'
           }])
           .select()
@@ -188,17 +192,33 @@ export default function Login({ onLogin }) {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {isRegistering && !isResetting && (
-            <div className="animate-in fade-in slide-in-from-top-2">
-              <label className="block text-xs font-bold text-text-muted uppercase tracking-widest mb-2 ml-1">Nome Completo</label>
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
-                <input 
-                  type="text" 
-                  value={nome}
-                  onChange={(e) => { setNome(e.target.value); setError(''); }}
-                  placeholder="Seu nome completo"
-                  className="w-full bg-bg-main border border-border rounded-xl py-3 pl-11 pr-4 text-text-main font-medium focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-all"
-                />
+            <div className="animate-in fade-in slide-in-from-top-2 space-y-5">
+              <div>
+                <label className="block text-xs font-bold text-text-muted uppercase tracking-widest mb-2 ml-1">Nome Completo</label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
+                  <input 
+                    type="text" 
+                    value={nome}
+                    onChange={(e) => { setNome(e.target.value); setError(''); }}
+                    placeholder="Seu nome completo"
+                    className="w-full bg-bg-main border border-border rounded-xl py-3 pl-11 pr-4 text-text-main font-medium focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-all"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-text-muted uppercase tracking-widest mb-2 ml-1">Seu Cargo / Função</label>
+                <select 
+                  value={cargo}
+                  onChange={(e) => setCargo(e.target.value)}
+                  className="w-full bg-bg-main border border-border rounded-xl py-3 px-4 text-text-main font-medium focus:outline-none focus:border-brand-blue focus:ring-1 focus:ring-brand-blue transition-all appearance-none"
+                >
+                  <option value="SDR">SDR (Pré-vendas)</option>
+                  <option value="Closer">Closer (Fechamento)</option>
+                  <option value="BDR">BDR (Prospecção)</option>
+                  <option value="Dono">Dono / Sócio</option>
+                </select>
               </div>
             </div>
           )}
