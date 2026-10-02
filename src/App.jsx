@@ -5,7 +5,6 @@ import Hub from './pages/Hub';
 import ComercialModule from './pages/ComercialModule';
 import ProcessualModule from './pages/ProcessualModule';
 import RHModule from './pages/RHModule';
-import SimuladorModule from './pages/SimuladorModule';
 import RoleplayModule from './pages/RoleplayModule';
 import MarketingModule from './pages/MarketingModule';
 import AdminModule from './pages/AdminModule';
@@ -45,7 +44,6 @@ function App() {
         <Route path="/processual" element={<ProcessualModule />} />
         <Route path="/rh" element={<RHModule />} />
         <Route path="/marketing" element={<MarketingModule />} />
-        <Route path="/simulador" element={<SimuladorModule />} />
         <Route path="/roleplay" element={<RoleplayModule />} />
         <Route path="/admin" element={<AdminModule />} />
         <Route path="*" element={<Navigate to="/" replace />} />

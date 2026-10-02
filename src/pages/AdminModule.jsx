@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ShieldAlert, Users, UserPlus, Key, Trash2, Edit3, Loader2, Link2, Settings, CheckCircle2, Zap } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, Users, UserPlus, Key, Trash2, Edit3, Loader2, Link2, Settings, CheckCircle2, Zap, Calculator } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import ReverseCalculator from '../components/ReverseCalculator';
 
 export default function AdminModule() {
   const navigate = useNavigate();
@@ -121,7 +122,7 @@ export default function AdminModule() {
         </button>
         <div className="font-display font-bold tracking-widest text-sm bg-red-500/20 text-red-500 px-4 py-1 rounded-full border border-red-500/30 flex items-center gap-2">
           <ShieldAlert size={16} />
-          Módulo Master — Painel Administrativo
+          Painel de Configurações do Sistema
         </div>
         <div className="w-40 flex justify-end"></div>
       </header>
@@ -145,6 +146,14 @@ export default function AdminModule() {
               }`}
             >
               <Settings size={18} /> Integrações (CRM)
+            </button>
+            <button 
+              onClick={() => setActiveTab('metas')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-colors ${
+                activeTab === 'metas' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'text-white/50 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              <Calculator size={18} /> Engenharia de Metas
             </button>
           </div>
         </aside>
@@ -273,6 +282,12 @@ export default function AdminModule() {
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {activeTab === 'metas' && (
+            <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <ReverseCalculator hideNavigation />
             </div>
           )}
 
