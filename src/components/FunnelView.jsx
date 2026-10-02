@@ -188,7 +188,7 @@ export default function FunnelView({ role, metrics, setMetrics }) {
             return (
               <div key={stage.id} className={`flex justify-between items-center p-3 rounded-lg border ${isGood ? 'border-[#10b981]/20 bg-[#10b981]/5' : 'border-[#f59e0b]/20 bg-[#f59e0b]/5'}`}>
                 <span className="text-xs text-text-muted">
-                  {prevStage.label} -> {stage.label}
+                  {prevStage.label} - {stage.label}
                 </span>
                 <div className="flex items-center gap-4">
                   <span className="text-[10px] text-text-muted">
@@ -204,7 +204,7 @@ export default function FunnelView({ role, metrics, setMetrics }) {
           
           <div className="flex justify-between items-center p-3 rounded-lg border border-[#f97316]/20 bg-[#f97316]/5 mt-4">
             <span className="text-xs font-bold text-text-main">
-              Conversão Geral ({config.stages[0].label} -> {config.stages[config.stages.length-1].label})
+              Conversão Geral ({config.stages[0].label} - {config.stages[config.stages.length-1].label})
             </span>
             <span className="text-xs font-bold text-[#f97316]">
               {totalConversion.toFixed(1)}%
