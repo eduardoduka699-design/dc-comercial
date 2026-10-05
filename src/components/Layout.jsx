@@ -19,11 +19,10 @@ export default function Layout({ children, userRole, onLogout }) {
   const isAdmin = userRole === 'Admin Supremo' || userRole?.includes('Gestor');
 
   const menuItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Gestão Comercial', path: '/comercial', icon: Target },
     { name: 'Treinamentos', path: '/processual', icon: FileText },
-    { name: 'Performance & RH', path: '/rh', icon: Users },
-    { name: 'Growth & Mkt', path: '/marketing', icon: Megaphone },
+    { name: 'Desempenho e RH', path: '/rh', icon: Users },
+    { name: 'Growth e Marketing', path: '/marketing', icon: Megaphone },
     { name: 'Roleplay IA', path: '/roleplay', icon: Briefcase },
   ];
 

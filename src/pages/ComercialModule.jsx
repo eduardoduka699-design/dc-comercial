@@ -93,54 +93,42 @@ export default function ComercialModule() {
   const filteredMetrics = getFilteredMetrics();
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-[#0a0a0a] text-white' : 'bg-gray-50 text-gray-900'} font-sans flex transition-colors duration-300`} translate="no">
-      {/* Sidebar */}
-      <aside className={`w-64 flex-shrink-0 border-r ${isDarkMode ? 'border-white/10 bg-[#101010]' : 'border-gray-200 bg-white'} flex flex-col transition-colors duration-300`}>
-        <div className="p-6 flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-          <div className="w-10 h-10 bg-brand-blue rounded-xl flex items-center justify-center font-bold text-white text-lg shadow-lg shadow-brand-blue/20">
-            DC
-          </div>
-          <div className="flex flex-col justify-center">
-            <h1 className="font-bold text-lg leading-none tracking-tight">DashClient</h1>
-            <span className={`text-[9px] tracking-widest font-bold uppercase mt-1 ${isDarkMode ? 'text-white/50' : 'text-gray-500'}`}>Gabriel Vidal</span>
-          </div>
-        </div>
-
-        <nav className="flex-1 px-4 space-y-2 mt-4">
-          <p className={`text-xs font-bold uppercase tracking-widest ${isDarkMode ? 'text-white/30' : 'text-gray-400'} mb-4 px-3`}>Gestão</p>
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeMenu === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveMenu(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium text-sm transition-all ${
-                  isActive 
-                    ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20' 
-                    : isDarkMode 
-                      ? 'text-white/50 hover:text-white hover:bg-white/5' 
-                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-                }`}
-              >
-                <Icon size={18} className={isActive ? "text-white" : "opacity-70"} />
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
-      </aside>
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Top Header */}
-        <header className={`h-16 border-b ${isDarkMode ? 'border-white/10 bg-[#0a0a0a]' : 'border-gray-200 bg-gray-50'} flex items-center justify-between px-8 shrink-0 transition-colors duration-300`}>
+    <div className={`flex-1 h-full ${isDarkMode ? 'bg-[#0a0a0a] text-white' : 'bg-gray-50 text-gray-900'} font-sans flex flex-col transition-colors duration-300`} translate="no">
+      {/* Top Header */}
+      <header className={`h-16 border-b ${isDarkMode ? 'border-white/10 bg-[#0a0a0a]' : 'border-gray-200 bg-gray-50'} flex items-center justify-between px-8 shrink-0 transition-colors duration-300`}>
+        <div className="flex items-center gap-6">
           <div>
-            <span className={`text-xs ${isDarkMode ? 'text-white/50' : 'text-gray-500'}`}>Espaço de trabalho</span>
-            <div className="text-sm font-semibold">
+            <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-white/40' : 'text-gray-500'}`}>Gestão Comercial</span>
+            <div className="text-sm font-bold text-brand-blue">
               {menuItems.find(m => m.id === activeMenu)?.label}
             </div>
           </div>
+          
+          <div className="h-6 w-px bg-white/10 mx-2"></div>
+          
+          <div className="flex gap-2">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeMenu === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveMenu(item.id)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-xs transition-all ${
+                    isActive 
+                      ? 'bg-brand-blue/10 text-brand-blue border border-brand-blue/20' 
+                      : isDarkMode 
+                        ? 'text-white/50 hover:text-white hover:bg-white/5 border border-transparent' 
+                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100 border border-transparent'
+                  }`}
+                >
+                  <Icon size={14} className={isActive ? "text-brand-blue" : "opacity-70"} />
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
           
           <div className="flex items-center gap-3">
             <div className={`flex items-center border rounded-lg p-1 mr-4 ${isDarkMode ? 'bg-[#151515] border-white/10' : 'bg-white border-gray-200'}`}>
