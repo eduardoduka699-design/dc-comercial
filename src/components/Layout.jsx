@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
   Target, 
   FileText, 
   Users, 
@@ -9,12 +8,14 @@ import {
   Briefcase, 
   Settings, 
   LogOut,
-  ChevronLeft
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 export default function Layout({ children, userRole, onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const isAdmin = userRole === 'Admin Supremo' || userRole?.includes('Gestor');
 
@@ -34,23 +35,27 @@ export default function Layout({ children, userRole, onLogout }) {
     <div className="flex h-screen bg-[#0a0a0a] text-white overflow-hidden font-sans">
       
       {/* Sidebar Lateral */}
-      <aside className="w-64 bg-[#101010] border-r border-white/5 flex flex-col shrink-0 relative z-20">
+      <aside 
+        className={`${isCollapsed ? 'w-20' : 'w-64'} bg-[#101010] border-r border-white/5 flex flex-col shrink-0 relative z-20 transition-all duration-300`}
+      >
         
         {/* Header Logo */}
-        <div className="h-20 flex items-center px-6 border-b border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#f97316] rounded-xl flex items-center justify-center shadow-lg shadow-[#f97316]/20">
+        <div className={`h-20 flex items-center border-b border-white/5 ${isCollapsed ? 'justify-center px-0' : 'px-6'}`}>
+          <div className="flex items-center gap-3 overflow-hidden whitespace-nowrap">
+            <div className="w-10 h-10 bg-brand-blue rounded-xl flex items-center justify-center shadow-lg shadow-brand-blue/20 shrink-0">
               <span className="font-bold text-white text-lg tracking-tighter">DC</span>
             </div>
-            <div className="flex flex-col justify-center">
-              <h1 className="font-bold text-lg leading-none tracking-tight text-white">DashClient</h1>
-              <span className="text-[9px] tracking-[0.2em] text-white/50 font-bold uppercase mt-1 leading-none">Gabriel Vidal</span>
-            </div>
+            {!isCollapsed && (
+              <div className="flex flex-col justify-center animate-in fade-in">
+                <h1 className="font-bold text-lg leading-none tracking-tight text-white">DashClient</h1>
+                <span className="text-[9px] tracking-[0.2em] text-white/50 font-bold uppercase mt-1 leading-none">Gabriel Vidal</span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Menu Navigation */}
-        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1 scrollbar-hide">
+        <nav className={`flex-1 overflow-y-auto py-6 space-y-2 scrollbar-hide ${isCollapsed ? 'px-3' : 'px-4'}`}>
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
@@ -59,42 +64,56 @@ export default function Layout({ children, userRole, onLogout }) {
               <NavLink
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                title={isCollapsed ? item.name : undefined}
+                className={`flex items-center rounded-xl text-sm font-medium transition-all ${
+                  isCollapsed ? 'justify-center p-3' : 'px-4 py-3 gap-3'
+                } ${
                   isActive 
-                    ? 'bg-[#f97316] text-white shadow-[0_0_15px_rgba(249,115,22,0.3)]' 
+                    ? 'bg-brand-blue text-white shadow-[0_0_15px_rgba(0,112,243,0.3)]' 
                     : 'text-white/50 hover:bg-white/5 hover:text-white'
                 }`}
               >
-                <Icon size={18} className={isActive ? 'text-white' : 'text-white/50'} />
-                {item.name}
+                <Icon size={18} className={isActive ? 'text-white shrink-0' : 'text-white/50 shrink-0'} />
+                {!isCollapsed && <span className="whitespace-nowrap animate-in fade-in">{item.name}</span>}
               </NavLink>
             );
           })}
         </nav>
 
         {/* Footer Area */}
-        <div className="p-4 border-t border-white/5 space-y-2">
-          <div className="px-4 mb-4 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-brand-blue/20 flex items-center justify-center text-brand-blue font-bold text-xs">
+        <div className={`p-4 border-t border-white/5 space-y-2 flex flex-col ${isCollapsed ? 'items-center px-2' : ''}`}>
+          
+          <div className={`mb-4 flex items-center gap-3 overflow-hidden whitespace-nowrap ${isCollapsed ? 'justify-center' : 'px-4'}`}>
+            <div className="w-8 h-8 rounded-full bg-brand-blue/20 flex items-center justify-center text-brand-blue font-bold text-xs shrink-0">
               {userRole?.substring(0, 2).toUpperCase() || 'US'}
             </div>
-            <div>
-              <p className="text-xs font-bold text-white leading-tight">Minha Conta</p>
-              <p className="text-[10px] text-white/40">{userRole}</p>
-            </div>
+            {!isCollapsed && (
+              <div className="animate-in fade-in">
+                <p className="text-xs font-bold text-white leading-tight">Minha Conta</p>
+                <p className="text-[10px] text-white/40 truncate w-32">{userRole}</p>
+              </div>
+            )}
           </div>
           
           <button 
             onClick={onLogout}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:bg-white/5 hover:text-red-400 transition-colors"
+            title={isCollapsed ? "Sair do Sistema" : undefined}
+            className={`w-full flex items-center rounded-xl text-sm font-medium text-white/50 hover:bg-white/5 hover:text-red-400 transition-colors ${
+              isCollapsed ? 'justify-center p-2.5' : 'px-4 py-2.5 gap-3'
+            }`}
           >
-            <LogOut size={16} />
-            Sair do Sistema
+            <LogOut size={16} className="shrink-0" />
+            {!isCollapsed && <span className="whitespace-nowrap animate-in fade-in">Sair do Sistema</span>}
           </button>
           
-          <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-white/30 hover:bg-white/5 hover:text-white transition-colors">
-            <ChevronLeft size={16} />
-            Recolher
+          <button 
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className={`w-full flex items-center rounded-xl text-sm font-medium text-white/30 hover:bg-white/5 hover:text-white transition-colors ${
+              isCollapsed ? 'justify-center p-2.5' : 'justify-center py-2.5 gap-2'
+            }`}
+          >
+            {isCollapsed ? <ChevronRight size={16} className="shrink-0" /> : <ChevronLeft size={16} className="shrink-0" />}
+            {!isCollapsed && <span className="whitespace-nowrap animate-in fade-in text-xs uppercase tracking-widest font-bold">Recolher</span>}
           </button>
         </div>
       </aside>
