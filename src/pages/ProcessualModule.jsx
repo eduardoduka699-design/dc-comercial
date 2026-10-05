@@ -962,6 +962,7 @@ const playbookHtml = `<!DOCTYPE html>
 
 export default function ProcessualModule() {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = React.useState('playbook');
 
   return (
     <div className="flex flex-col h-screen bg-[#0a0a0a]">
@@ -972,20 +973,99 @@ export default function ProcessualModule() {
           className="flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm font-bold tracking-wider uppercase"
         >
           <ArrowLeft size={16} />
-          Voltar ao Hub Central
+          Voltar ao Hub
         </button>
         <div className="mx-auto font-display text-white font-bold tracking-widest text-sm bg-white/5 px-4 py-1 rounded-full border border-white/10">
-          Módulo 02 — Treinamentos, Playbook e Aulas
+          Módulo 02 — Treinamentos e Playbook
         </div>
+        <div className="w-24"></div>
       </header>
 
-      {/* Container do Playbook usando Iframe para preservar 100% o CSS do HTML enviado */}
-      <div className="flex-1 w-full bg-[#0f141c]">
-        <iframe 
-          srcDoc={playbookHtml} 
-          className="w-full h-full border-none" 
-          title="Treinamentos e Playbook"
-        />
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar de subpastas */}
+        <aside className="w-64 border-r border-white/10 bg-[#101010] flex flex-col shrink-0 p-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-4 px-3">Subpastas</p>
+          <div className="space-y-2">
+            <button 
+              onClick={() => setActiveTab('playbook')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-colors ${
+                activeTab === 'playbook' ? 'bg-brand-blue/10 text-brand-blue border border-brand-blue/20' : 'text-white/50 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              📖 Manuais e Playbooks
+            </button>
+            <button 
+              onClick={() => setActiveTab('calls')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-colors ${
+                activeTab === 'calls' ? 'bg-brand-blue/10 text-brand-blue border border-brand-blue/20' : 'text-white/50 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              🎧 Calls Gravadas
+            </button>
+            <button 
+              onClick={() => setActiveTab('treinamentos')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-colors ${
+                activeTab === 'treinamentos' ? 'bg-brand-blue/10 text-brand-blue border border-brand-blue/20' : 'text-white/50 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              🎓 Treinamentos em Vídeo
+            </button>
+          </div>
+        </aside>
+
+        {/* Área Principal */}
+        <main className="flex-1 overflow-y-auto bg-[#0f141c]">
+          {activeTab === 'playbook' && (
+            <iframe 
+              srcDoc={playbookHtml} 
+              className="w-full h-full border-none" 
+              title="Treinamentos e Playbook"
+            />
+          )}
+
+          {activeTab === 'calls' && (
+            <div className="p-8 max-w-5xl mx-auto animate-in fade-in">
+              <h2 className="text-2xl font-display font-bold text-white mb-2">Calls Gravadas</h2>
+              <p className="text-white/50 mb-8">Análise de ligações reais para calibração de discurso.</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="bg-[#151515] border border-white/10 rounded-2xl p-4 hover:border-brand-blue/30 transition-all cursor-pointer group">
+                    <div className="aspect-video bg-[#0a0a0a] rounded-lg mb-4 flex items-center justify-center border border-white/5 relative overflow-hidden">
+                      <div className="w-12 h-12 rounded-full bg-brand-blue/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <div className="w-0 h-0 border-t-8 border-t-transparent border-l-[12px] border-l-brand-blue border-b-8 border-b-transparent ml-1"></div>
+                      </div>
+                    </div>
+                    <h3 className="text-white font-bold mb-1">Análise de Call - Exemplo {i}</h3>
+                    <p className="text-xs text-white/40">Duração: 45 min • Closer: João</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'treinamentos' && (
+            <div className="p-8 max-w-5xl mx-auto animate-in fade-in">
+              <h2 className="text-2xl font-display font-bold text-white mb-2">Treinamentos e Aulas</h2>
+              <p className="text-white/50 mb-8">Trilha de capacitação técnica e comportamental.</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="bg-[#151515] border border-white/10 rounded-2xl p-4 hover:border-brand-blue/30 transition-all cursor-pointer group">
+                    <div className="aspect-video bg-[#0a0a0a] rounded-lg mb-4 flex items-center justify-center border border-white/5 relative overflow-hidden">
+                      <div className="absolute inset-0 opacity-20 bg-gradient-to-br from-brand-blue to-transparent"></div>
+                      <div className="w-12 h-12 rounded-full bg-brand-blue/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <div className="w-0 h-0 border-t-8 border-t-transparent border-l-[12px] border-l-brand-blue border-b-8 border-b-transparent ml-1"></div>
+                      </div>
+                    </div>
+                    <h3 className="text-white font-bold mb-1">Módulo {i} - Processo Comercial</h3>
+                    <p className="text-xs text-white/40">Aula teórica sobre contorno de objeções.</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </main>
       </div>
     </div>
   );
