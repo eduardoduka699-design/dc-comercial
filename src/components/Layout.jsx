@@ -9,7 +9,8 @@ import {
   Settings, 
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  User
 } from 'lucide-react';
 
 export default function Layout({ children, userRole, onLogout }) {
@@ -27,10 +28,6 @@ export default function Layout({ children, userRole, onLogout }) {
     { name: 'Roleplay IA', path: '/roleplay', icon: Briefcase },
   ];
 
-  if (isAdmin) {
-    menuItems.push({ name: 'Configurações', path: '/admin', icon: Settings });
-  }
-
   return (
     <div className="flex h-screen bg-[#0a0a0a] text-white overflow-hidden font-sans">
       
@@ -43,12 +40,12 @@ export default function Layout({ children, userRole, onLogout }) {
         <div className={`h-20 flex items-center border-b border-white/5 ${isCollapsed ? 'justify-center px-0' : 'px-6'}`}>
           <div className="flex items-center gap-3 overflow-hidden whitespace-nowrap">
             <div className="w-10 h-10 bg-brand-blue rounded-xl flex items-center justify-center shadow-lg shadow-brand-blue/20 shrink-0">
-              <span className="font-bold text-white text-lg tracking-tighter">DC</span>
+              <span className="font-bold text-white text-lg tracking-tighter" translate="no">DC</span>
             </div>
             {!isCollapsed && (
               <div className="flex flex-col justify-center animate-in fade-in">
-                <h1 className="font-bold text-lg leading-none tracking-tight text-white">DashClient</h1>
-                <span className="text-[9px] tracking-[0.2em] text-white/50 font-bold uppercase mt-1 leading-none">Gabriel Vidal</span>
+                <h1 className="font-bold text-lg leading-none tracking-tight text-white" translate="no">DashClient</h1>
+                <span className="text-[9px] tracking-[0.2em] text-white/50 font-bold uppercase mt-1 leading-none" translate="no">Gabriel Vidal</span>
               </div>
             )}
           </div>
@@ -83,14 +80,31 @@ export default function Layout({ children, userRole, onLogout }) {
         {/* Footer Area */}
         <div className={`p-4 border-t border-white/5 space-y-2 flex flex-col ${isCollapsed ? 'items-center px-2' : ''}`}>
           
+          {isAdmin && (
+            <NavLink
+              to="/admin"
+              title={isCollapsed ? "Configurações" : undefined}
+              className={`w-full flex items-center rounded-xl text-sm font-medium transition-all mb-4 ${
+                isCollapsed ? 'justify-center p-3' : 'px-4 py-3 gap-3'
+              } ${
+                location.pathname === '/admin'
+                  ? 'bg-brand-blue text-white shadow-[0_0_15px_rgba(0,112,243,0.3)]' 
+                  : 'text-white/50 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              <Settings size={18} className={location.pathname === '/admin' ? 'text-white shrink-0' : 'text-white/50 shrink-0'} />
+              {!isCollapsed && <span className="whitespace-nowrap animate-in fade-in">Configurações</span>}
+            </NavLink>
+          )}
+
           <div className={`mb-4 flex items-center gap-3 overflow-hidden whitespace-nowrap ${isCollapsed ? 'justify-center' : 'px-4'}`}>
-            <div className="w-8 h-8 rounded-full bg-brand-blue/20 flex items-center justify-center text-brand-blue font-bold text-xs shrink-0">
-              {userRole?.substring(0, 2).toUpperCase() || 'US'}
+            <div className="w-8 h-8 rounded-full bg-brand-blue/20 flex items-center justify-center text-brand-blue shrink-0">
+              <User size={14} />
             </div>
             {!isCollapsed && (
               <div className="animate-in fade-in">
                 <p className="text-xs font-bold text-white leading-tight">Minha Conta</p>
-                <p className="text-[10px] text-white/40 truncate w-32">{userRole}</p>
+                <p className="text-[10px] text-white/40 truncate w-32" translate="no">{userRole}</p>
               </div>
             )}
           </div>
