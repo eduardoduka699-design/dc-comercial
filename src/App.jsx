@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
-import Hub from './pages/Hub';
+import Layout from './components/Layout';
+import Dashboard from './pages/Dashboard';
 import ComercialModule from './pages/ComercialModule';
 import ProcessualModule from './pages/ProcessualModule';
 import RHModule from './pages/RHModule';
@@ -38,16 +39,18 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Hub onLogout={handleLogout} userRole={userRole} />} />
-        <Route path="/comercial" element={<ComercialModule />} />
-        <Route path="/processual" element={<ProcessualModule />} />
-        <Route path="/rh" element={<RHModule />} />
-        <Route path="/marketing" element={<MarketingModule />} />
-        <Route path="/roleplay" element={<RoleplayModule />} />
-        <Route path="/admin" element={<AdminModule />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <Layout userRole={userRole} onLogout={handleLogout}>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/comercial" element={<ComercialModule />} />
+          <Route path="/processual" element={<ProcessualModule />} />
+          <Route path="/rh" element={<RHModule />} />
+          <Route path="/marketing" element={<MarketingModule />} />
+          <Route path="/roleplay" element={<RoleplayModule />} />
+          <Route path="/admin" element={<AdminModule />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Layout>
     </BrowserRouter>
   );
 }

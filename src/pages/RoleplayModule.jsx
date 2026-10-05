@@ -79,20 +79,7 @@ export default function RoleplayModule() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col">
-      <header className="h-16 border-b border-white/10 bg-black/50 backdrop-blur-md flex items-center px-6 shrink-0 z-50">
-        <button 
-          onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm font-bold tracking-wider uppercase"
-        >
-          <ArrowLeft size={16} />
-          Voltar ao Hub Central
-        </button>
-        <div className="mx-auto font-display font-bold tracking-widest text-sm bg-[#10b981]/20 text-[#10b981] px-4 py-1 rounded-full border border-[#10b981]/30 flex items-center gap-2">
-          <Bot size={16} />
-          Treinamento — Roleplay IA
-        </div>
-        <div className="w-40"></div>
-      </header>
+      
 
       <main className="flex-1 w-full max-w-6xl mx-auto p-4 md:p-8 flex gap-6 overflow-hidden h-[calc(100vh-64px)]">
         
@@ -201,3 +188,4 @@ const CheckCircleIcon = () => (
     <path d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-.358-.325a.319.319 0 0 0-.484.032l-.378.483a.418.418 0 0 0 .036.541l1.32 1.266c.143.14.361.125.484-.033l6.272-8.048a.366.366 0 0 0-.064-.512zm-4.1 0l-.478-.372a.365.365 0 0 0-.51.063L4.566 9.879a.32.32 0 0 1-.484.033L1.891 7.769a.366.366 0 0 0-.515.006l-.423.433a.364.364 0 0 0 .006.514l3.258 3.185c.143.14.361.125.484-.033l6.272-8.048a.365.365 0 0 0-.063-.51z" fill="#53bdeb"/>
   </svg>
 );
+

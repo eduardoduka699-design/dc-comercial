@@ -39,15 +39,7 @@ export default function RHModule() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col">
-      <header className="h-16 border-b border-white/10 bg-black/50 backdrop-blur-md flex items-center justify-between px-6 shrink-0 z-50">
-        <button onClick={() => navigate('/')} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm font-bold tracking-wider uppercase">
-          <ArrowLeft size={16} /> Voltar ao Hub
-        </button>
-        <div className="font-display font-bold tracking-widest text-sm bg-brand-blue/20 text-brand-blue px-4 py-1 rounded-full border border-brand-blue/30">
-          Módulo 03 — Performance & RH
-        </div>
-        <div className="w-24"></div>
-      </header>
+      
 
       <main className="flex-1 max-w-7xl w-full mx-auto p-8 overflow-y-auto">
         <div className="mb-10 flex justify-between items-end">
@@ -152,3 +144,4 @@ export default function RHModule() {
     </div>
   );
 }
+

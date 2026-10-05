@@ -112,20 +112,7 @@ export default function AdminModule() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col" translate="no">
-      <header className="h-16 border-b border-white/10 bg-black/50 backdrop-blur-md flex items-center justify-between px-6 shrink-0 z-50">
-        <button 
-          onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm font-bold tracking-wider uppercase"
-        >
-          <ArrowLeft size={16} />
-          Voltar ao Hub Central
-        </button>
-        <div className="font-display font-bold tracking-widest text-sm bg-red-500/20 text-red-500 px-4 py-1 rounded-full border border-red-500/30 flex items-center gap-2">
-          <ShieldAlert size={16} />
-          Painel de Configurações do Sistema
-        </div>
-        <div className="w-40 flex justify-end"></div>
-      </header>
+      
 
       <div className="flex flex-1 overflow-hidden">
         <aside className="w-64 border-r border-white/10 bg-[#101010] flex flex-col shrink-0 p-4">
@@ -374,3 +361,4 @@ export default function AdminModule() {
     </div>
   );
 }
+

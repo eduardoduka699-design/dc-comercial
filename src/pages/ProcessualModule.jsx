@@ -258,14 +258,7 @@ const playbookHtml = `<!DOCTYPE html>
 </head>
 <body>
   <div class="container">
-    <header class="cover">
-      <p class="eyebrow">Manual Operacional Independente</p>
-      <h1>Playbook Comercial — Sales Flow</h1>
-      <p>Estrutura comercial para atendimento, follow-up e conversão de leads de tráfego pago.</p>
-      <div class="quote" style="margin-bottom:0">
-        “Tráfego gera oportunidade. Comercial transforma oportunidade em contrato.”
-      </div>
-    </header>
+    
 
     <section class="toc">
       <p class="eyebrow">Sumário</p>
@@ -967,19 +960,7 @@ export default function ProcessualModule() {
   return (
     <div className="flex flex-col h-screen bg-[#0a0a0a]">
       {/* Barra superior de navegação */}
-      <header className="h-16 border-b border-white/10 bg-black/50 backdrop-blur-md flex items-center px-6 shrink-0 z-50">
-        <button 
-          onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm font-bold tracking-wider uppercase"
-        >
-          <ArrowLeft size={16} />
-          Voltar ao Hub
-        </button>
-        <div className="mx-auto font-display text-white font-bold tracking-widest text-sm bg-white/5 px-4 py-1 rounded-full border border-white/10">
-          Módulo 02 — Treinamentos e Playbook
-        </div>
-        <div className="w-24"></div>
-      </header>
+      
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar de subpastas */}
@@ -1070,3 +1051,4 @@ export default function ProcessualModule() {
     </div>
   );
 }
+
