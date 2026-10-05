@@ -234,7 +234,7 @@ export default function ComercialModule() {
             )}
           </div>
         </main>
-      </div>
     </div>
   );
 }
+
