@@ -40,9 +40,9 @@ export default function Projection({ role, metrics, goals }) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {Object.keys(goals).map((key) => {
-            const current = metrics[key];
-            const goal = goals[key];
+          {Object.keys(goals || {}).map((key) => {
+            const current = Number(metrics?.[key] || 0);
+            const goal = Number(goals?.[key] || 0);
             const gap = goal - current;
             const status = getStatus(current, goal);
             
@@ -50,9 +50,10 @@ export default function Projection({ role, metrics, goals }) {
             const isCurrency = key.includes('Size');
             
             const formatValue = (val) => {
-              if (isCurrency) return `R$ ${val.toLocaleString()}`;
-              if (isPercent) return `${val}%`;
-              return val.toLocaleString();
+              const safeVal = Number(val || 0);
+              if (isCurrency) return `R$ ${safeVal.toLocaleString('pt-BR')}`;
+              if (isPercent) return `${safeVal}%`;
+              return safeVal.toLocaleString('pt-BR');
             };
 
             return (

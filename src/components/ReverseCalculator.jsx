@@ -131,7 +131,7 @@ export default function ReverseCalculator({ onSaveGoals }) {
         </div>
         <div className="flex-1 bg-[#10b981]/10 p-4 rounded-lg border border-[#10b981]/30 flex flex-col justify-center">
           <p className="text-xs font-bold text-[#10b981] uppercase tracking-widest mb-1">Faturamento Projetado</p>
-          <p className="text-2xl font-bold text-[#10b981]">R$ {faturamento.toLocaleString('pt-BR')}</p>
+          <p className="text-2xl font-bold text-[#10b981]">R$ {Number(faturamento || 0).toLocaleString('pt-BR')}</p>
         </div>
       </div>
 

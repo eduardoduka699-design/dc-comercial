@@ -128,7 +128,7 @@ export default function FunnelView({ role, metrics, setMetrics }) {
         <div className="mt-8 pt-6 border-t border-border">
           <div className="flex justify-between items-end mb-2">
             <label className="text-sm font-medium text-text-main">Ticket Médio (Vendas)</label>
-            <span className="text-xs font-bold text-[#f59e0b]">R$ {ticketMedio.toLocaleString('pt-BR')}</span>
+            <span className="text-xs font-bold text-[#f59e0b]">R$ {Number(ticketMedio || 0).toLocaleString('pt-BR')}</span>
           </div>
           <input 
             type="number"
@@ -146,7 +146,7 @@ export default function FunnelView({ role, metrics, setMetrics }) {
           </div>
           <div className="flex-1 bg-bg-main p-4 rounded-xl border border-[#10b981]/30">
             <p className="text-[10px] text-text-muted uppercase tracking-widest text-center mb-1">Faturamento Gerado</p>
-            <p className="text-2xl font-bold text-[#10b981] text-center">R$ {roas.toLocaleString('pt-BR')}</p>
+            <p className="text-2xl font-bold text-[#10b981] text-center">R$ {Number(roas || 0).toLocaleString('pt-BR')}</p>
           </div>
         </div>
       </div>

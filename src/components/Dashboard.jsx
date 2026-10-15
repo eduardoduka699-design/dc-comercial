@@ -61,12 +61,12 @@ export default function Dashboard({ role, metrics, goals, chartData }) {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {Object.keys(metrics).map((key) => {
-          const current = metrics[key];
-          const goal = goals[key];
-          const progress = (current / goal) * 100;
+        {Object.keys(metrics || {}).map((key) => {
+          const current = Number(metrics?.[key] || 0);
+          const goal = Number(goals?.[key] || 0);
+          const progress = goal > 0 ? (current / goal) * 100 : 0;
           const unit = getUnit(key);
-          const formattedCurrent = current.toLocaleString();
+          const formattedCurrent = current.toLocaleString('pt-BR');
           const colorClass = getMetricColor(progress);
           const Icon = getMetricIcon(progress);
 
@@ -91,7 +91,7 @@ export default function Dashboard({ role, metrics, goals, chartData }) {
 
               <div>
                 <p className="text-text-muted text-xs font-medium">
-                  Meta: {unit === 'R$' ? 'R$ ' : ''}{goal.toLocaleString()}{unit !== 'R$' ? unit : ''}
+                  Meta: {unit === 'R$' ? 'R$ ' : ''}{goal.toLocaleString('pt-BR')}{unit !== 'R$' ? unit : ''}
                 </p>
               </div>
             </div>

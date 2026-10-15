@@ -61,7 +61,7 @@ export default function RHModule() {
           <div className="bg-[#151515] border border-white/10 rounded-2xl p-6 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><DollarSign size={64} /></div>
             <p className="text-white/50 text-xs font-bold tracking-wider uppercase mb-2">Comissões e Base</p>
-            <h3 className="text-3xl font-black text-brand-blue">R$ {totalComissoes.toLocaleString('pt-BR')}</h3>
+            <h3 className="text-3xl font-black text-brand-blue">R$ {Number(totalComissoes || 0).toLocaleString('pt-BR')}</h3>
           </div>
         </div>
 
@@ -85,7 +85,7 @@ export default function RHModule() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
-                  {comissoes.map((item) => (
+                  {(Array.isArray(comissoes) ? comissoes : []).map((item) => (
                     <tr key={item.id} className="hover:bg-white/5 transition-colors">
                       <td className="p-4 pl-6 font-bold text-white">{item.nome}</td>
                       <td className="p-4 text-white/70">{item.cargo}</td>
@@ -93,25 +93,25 @@ export default function RHModule() {
                         {isEditing ? (
                           <input type="number" className="w-24 bg-[#0a0a0a] border border-white/20 rounded px-2 py-1 text-white focus:border-brand-blue focus:outline-none" value={item.base} onChange={(e) => handleChange(item.id, 'base', e.target.value)} />
                         ) : (
-                          <span className="text-white/70">R$ {item.base.toLocaleString('pt-BR')}</span>
+                          <span className="text-white/70">R$ {Number(item?.base || 0).toLocaleString('pt-BR')}</span>
                         )}
                       </td>
                       <td className="p-4">
                         {isEditing ? (
                           <input type="number" className="w-24 bg-[#0a0a0a] border border-white/20 rounded px-2 py-1 text-white focus:border-brand-blue focus:outline-none" value={item.comissao} onChange={(e) => handleChange(item.id, 'comissao', e.target.value)} />
                         ) : (
-                          <span className="font-medium">R$ {item.comissao.toLocaleString('pt-BR')}</span>
+                          <span className="font-medium">R$ {Number(item?.comissao || 0).toLocaleString('pt-BR')}</span>
                         )}
                       </td>
                       <td className="p-4">
                         {isEditing ? (
                           <input type="number" className="w-24 bg-[#0a0a0a] border border-white/20 rounded px-2 py-1 text-white focus:border-brand-blue focus:outline-none" value={item.bonus} onChange={(e) => handleChange(item.id, 'bonus', e.target.value)} />
                         ) : (
-                          <span className="font-bold text-[#10b981]">{item.bonus > 0 ? `+ R$ ${item.bonus.toLocaleString('pt-BR')}` : '-'}</span>
+                          <span className="font-bold text-[#10b981]">{Number(item?.bonus || 0) > 0 ? `+ R$ ${Number(item?.bonus || 0).toLocaleString('pt-BR')}` : '-'}</span>
                         )}
                       </td>
                       <td className="p-4 text-right pr-6 font-black text-lg text-brand-blue">
-                        R$ {(item.base + item.comissao + item.bonus).toLocaleString('pt-BR')}
+                        R$ {(Number(item?.base || 0) + Number(item?.comissao || 0) + Number(item?.bonus || 0)).toLocaleString('pt-BR')}
                       </td>
                     </tr>
                   ))}

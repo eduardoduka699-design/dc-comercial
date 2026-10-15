@@ -101,7 +101,12 @@ export default function AdminModule() {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Nunca';
-    return new Date(dateString).toLocaleString('pt-BR');
+    try {
+      const d = new Date(dateString);
+      return isNaN(d.getTime()) ? 'Nunca' : d.toLocaleString('pt-BR');
+    } catch {
+      return 'Nunca';
+    }
   };
 
   const crms = [
