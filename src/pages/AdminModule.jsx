@@ -35,9 +35,10 @@ export default function AdminModule() {
     setLoading(true);
     try {
       const data = await userService.getUsers();
-      setUsuarios(data);
+      setUsuarios(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error('Erro ao buscar usuários:', e);
+      setUsuarios([]);
     }
     setLoading(false);
   };
@@ -164,7 +165,7 @@ export default function AdminModule() {
               <div className="bg-[#151515] border border-white/10 rounded-2xl overflow-hidden min-h-[400px]">
                 <div className="p-6 border-b border-white/10 flex items-center gap-3">
                   <Users size={24} className="text-red-500" />
-                  <h3 className="text-lg font-bold text-white">Usuários Cadastrados ({usuarios.length})</h3>
+                  <h3 className="text-lg font-bold text-white">Usuários Cadastrados ({Array.isArray(usuarios) ? usuarios.length : 0})</h3>
                 </div>
                 
                 {loading ? (
@@ -186,7 +187,7 @@ export default function AdminModule() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/10">
-                        {usuarios.map((user) => (
+                        {(Array.isArray(usuarios) ? usuarios : []).map((user) => (
                           <tr key={user.id} className="hover:bg-white/5 transition-colors group">
                             <td className="p-4 pl-6 font-bold text-white">{user.nome}</td>
                             <td className="p-4 text-white/60 font-mono text-xs">{user.usuario}</td>

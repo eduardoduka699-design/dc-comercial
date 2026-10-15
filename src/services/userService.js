@@ -68,7 +68,15 @@ export const userService = {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(DEFAULT_USERS));
         return DEFAULT_USERS;
       }
-      return parsed;
+      return parsed.map(u => ({
+        id: u?.id || ('u_' + Math.random().toString(36).substr(2, 9)),
+        nome: u?.nome || u?.usuario || 'Colaborador',
+        usuario: u?.usuario || 'usuario',
+        senha: u?.senha || '',
+        cargo: u?.cargo || 'SDR',
+        status: u?.status || 'Ativo',
+        ultimo_acesso: u?.ultimo_acesso || new Date().toISOString()
+      }));
     } catch {
       return DEFAULT_USERS;
     }

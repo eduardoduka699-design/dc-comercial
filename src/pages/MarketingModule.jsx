@@ -33,26 +33,44 @@ export default function MarketingModule() {
   };
 
   const [campanhas, setCampanhas] = useState(() => {
-    const saved = localStorage.getItem('dc-leiseca-mkt-campanhas');
-    return saved ? JSON.parse(saved) : defaultCampanhas;
+    try {
+      const saved = localStorage.getItem('dc-leiseca-mkt-campanhas');
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) && parsed.length > 0 ? parsed : defaultCampanhas;
+    } catch {
+      return defaultCampanhas;
+    }
   });
 
   const [config, setConfig] = useState(() => {
-    const saved = localStorage.getItem('dc-leiseca-mkt-config');
-    return saved ? JSON.parse(saved) : defaultConfig;
+    try {
+      const saved = localStorage.getItem('dc-leiseca-mkt-config');
+      const parsed = saved ? JSON.parse(saved) : null;
+      return parsed && typeof parsed === 'object' ? { ...defaultConfig, ...parsed } : defaultConfig;
+    } catch {
+      return defaultConfig;
+    }
   });
 
   useEffect(() => {
-    localStorage.setItem('dc-leiseca-mkt-campanhas', JSON.stringify(campanhas));
+    try {
+      localStorage.setItem('dc-leiseca-mkt-campanhas', JSON.stringify(campanhas));
+    } catch (e) {
+      console.error(e);
+    }
   }, [campanhas]);
 
   useEffect(() => {
-    localStorage.setItem('dc-leiseca-mkt-config', JSON.stringify(config));
+    try {
+      localStorage.setItem('dc-leiseca-mkt-config', JSON.stringify(config));
+    } catch (e) {
+      console.error(e);
+    }
   }, [config]);
 
   // Edição das campanhas
   const handleCampaignChange = (id, field, value) => {
-    setCampanhas(prev => prev.map(c => {
+    setCampanhas(prev => (Array.isArray(prev) ? prev : defaultCampanhas).map(c => {
       if (c.id === id) {
         if (field === 'investido' || field === 'leads') {
           return { ...c, [field]: parseFloat(value) || 0 };
@@ -64,27 +82,30 @@ export default function MarketingModule() {
   };
 
   const handleAddCampaign = () => {
+    const list = Array.isArray(campanhas) ? campanhas : [];
     const newCamp = {
       id: Date.now(),
-      nome: `Nova Campanha ${campanhas.length + 1}`,
+      nome: `Nova Campanha ${list.length + 1}`,
       plataforma: 'Meta Ads',
       investido: 1000,
       leads: 30
     };
-    setCampanhas(prev => [...prev, newCamp]);
+    setCampanhas([...list, newCamp]);
   };
 
   const handleDeleteCampaign = (id) => {
-    if (campanhas.length <= 1) {
+    const list = Array.isArray(campanhas) ? campanhas : [];
+    if (list.length <= 1) {
       alert('É necessário manter ao menos uma campanha na lista.');
       return;
     }
-    setCampanhas(prev => prev.filter(c => c.id !== id));
+    setCampanhas(list.filter(c => c.id !== id));
   };
 
   const handleConfigChange = (field, value) => {
     setConfig(prev => ({
-      ...prev,
+      ...defaultConfig,
+      ...(prev || {}),
       [field]: parseFloat(value) || 0
     }));
   };
@@ -96,16 +117,22 @@ export default function MarketingModule() {
     }
   };
 
-  // Cálculos Automáticos e Invisíveis
-  const somaInvestimento = campanhas.reduce((acc, c) => acc + (Number(c.investido) || 0), 0);
-  const somaLeads = campanhas.reduce((acc, c) => acc + (Number(c.leads) || 0), 0);
+  // Safe references
+  const safeCampanhas = Array.isArray(campanhas) ? campanhas : defaultCampanhas;
+  const safeConfig = { ...defaultConfig, ...(config || {}) };
 
-  const totalInvestimento = config.modoCalculo === 'campanhas' ? somaInvestimento : config.manualInvestimento;
-  const totalLeads = config.modoCalculo === 'campanhas' ? somaLeads : config.manualLeads;
+  // Cálculos Automáticos e Invisíveis
+  const somaInvestimento = safeCampanhas.reduce((acc, c) => acc + (Number(c.investido) || 0), 0);
+  const somaLeads = safeCampanhas.reduce((acc, c) => acc + (Number(c.leads) || 0), 0);
+
+  const totalInvestimento = safesafeConfig.modoCalculo === 'campanhas' ? somaInvestimento : (Number(safesafeConfig.manualInvestimento) || 0);
+  const totalLeads = safesafeConfig.modoCalculo === 'campanhas' ? somaLeads : (Number(safesafeConfig.manualLeads) || 0);
 
   const cpl = totalLeads > 0 ? totalInvestimento / totalLeads : 0;
-  const cac = config.vendas > 0 ? totalInvestimento / config.vendas : 0;
-  const faturamento = config.vendas * config.ticket;
+  const vendasCount = Number(safesafeConfig.vendas) || 0;
+  const ticketValue = Number(safesafeConfig.ticket) || 0;
+  const cac = vendasCount > 0 ? totalInvestimento / vendasCount : 0;
+  const faturamento = vendasCount * ticketValue;
   const roas = totalInvestimento > 0 ? faturamento / totalInvestimento : 0;
 
   return (
@@ -176,7 +203,7 @@ export default function MarketingModule() {
                 <button
                   onClick={() => setConfig(prev => ({ ...prev, modoCalculo: 'campanhas' }))}
                   className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                    config.modoCalculo === 'campanhas' 
+                    safeConfig.modoCalculo === 'campanhas' 
                       ? 'bg-brand-blue text-white font-bold' 
                       : 'text-white/50 hover:text-white'
                   }`}
@@ -186,7 +213,7 @@ export default function MarketingModule() {
                 <button
                   onClick={() => setConfig(prev => ({ ...prev, modoCalculo: 'manual' }))}
                   className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                    config.modoCalculo === 'manual' 
+                    safeConfig.modoCalculo === 'manual' 
                       ? 'bg-brand-blue text-white font-bold' 
                       : 'text-white/50 hover:text-white'
                   }`}
@@ -205,7 +232,7 @@ export default function MarketingModule() {
                 <input 
                   type="number" 
                   min="0"
-                  value={config.vendas} 
+                  value={safeConfig.vendas} 
                   onChange={(e) => handleConfigChange('vendas', e.target.value)} 
                   className="w-full bg-[#0a0a0a] border border-white/20 rounded-xl px-4 py-2 text-white font-bold focus:border-brand-blue focus:outline-none" 
                 />
@@ -219,14 +246,14 @@ export default function MarketingModule() {
                 <input 
                   type="number" 
                   min="0"
-                  value={config.ticket} 
+                  value={safeConfig.ticket} 
                   onChange={(e) => handleConfigChange('ticket', e.target.value)} 
                   className="w-full bg-[#0a0a0a] border border-white/20 rounded-xl px-4 py-2 text-white font-bold focus:border-brand-blue focus:outline-none" 
                 />
                 <span className="text-[10px] text-white/40">Valor médio de cada contrato fechado</span>
               </div>
 
-              {config.modoCalculo === 'manual' && (
+              {safeConfig.modoCalculo === 'manual' && (
                 <>
                   <div>
                     <label className="block text-xs font-bold text-white/60 uppercase mb-1">
@@ -235,7 +262,7 @@ export default function MarketingModule() {
                     <input 
                       type="number" 
                       min="0"
-                      value={config.manualInvestimento} 
+                      value={safeConfig.manualInvestimento} 
                       onChange={(e) => handleConfigChange('manualInvestimento', e.target.value)} 
                       className="w-full bg-[#0a0a0a] border border-brand-blue/50 rounded-xl px-4 py-2 text-white font-bold focus:border-brand-blue focus:outline-none" 
                     />
@@ -249,7 +276,7 @@ export default function MarketingModule() {
                     <input 
                       type="number" 
                       min="0"
-                      value={config.manualLeads} 
+                      value={safeConfig.manualLeads} 
                       onChange={(e) => handleConfigChange('manualLeads', e.target.value)} 
                       className="w-full bg-[#0a0a0a] border border-brand-blue/50 rounded-xl px-4 py-2 text-white font-bold focus:border-brand-blue focus:outline-none" 
                     />
@@ -258,7 +285,7 @@ export default function MarketingModule() {
                 </>
               )}
 
-              {config.modoCalculo === 'campanhas' && (
+              {safeConfig.modoCalculo === 'campanhas' && (
                 <div className="col-span-1 md:col-span-2 flex items-center p-3 bg-white/5 rounded-xl border border-white/5">
                   <p className="text-xs text-white/60">
                     💡 O <strong className="text-white">Investimento Total</strong> e os <strong className="text-white">Leads Gerados</strong> estão sendo somados automaticamente a partir da tabela de campanhas abaixo.
@@ -274,21 +301,21 @@ export default function MarketingModule() {
           
           {/* Card 1: Investimento Total */}
           <div className={`bg-[#151515] border rounded-2xl p-5 relative overflow-hidden transition-all ${
-            isEditing && config.modoCalculo === 'manual' ? 'border-brand-blue/50 ring-1 ring-brand-blue/30' : 'border-white/10'
+            isEditing && safeConfig.modoCalculo === 'manual' ? 'border-brand-blue/50 ring-1 ring-brand-blue/30' : 'border-white/10'
           }`}>
             <p className="text-white/50 text-[10px] font-bold tracking-widest uppercase mb-1">Investimento Total</p>
             <h3 className="text-2xl font-black text-white">
               R$ {Number(totalInvestimento).toLocaleString('pt-BR')}
             </h3>
             <span className="text-[10px] text-white/40 block mt-1">
-              {config.modoCalculo === 'campanhas' ? 'Soma das campanhas' : 'Valor manual'}
+              {safeConfig.modoCalculo === 'campanhas' ? 'Soma das campanhas' : 'Valor manual'}
             </span>
             <div className="absolute top-0 right-0 p-3 opacity-10"><DollarSign size={40} /></div>
           </div>
 
           {/* Card 2: Leads Gerados */}
           <div className={`bg-[#151515] border rounded-2xl p-5 relative overflow-hidden transition-all ${
-            isEditing && config.modoCalculo === 'manual' ? 'border-brand-blue/50 ring-1 ring-brand-blue/30' : 'border-white/10'
+            isEditing && safeConfig.modoCalculo === 'manual' ? 'border-brand-blue/50 ring-1 ring-brand-blue/30' : 'border-white/10'
           }`}>
             <p className="text-white/50 text-[10px] font-bold tracking-widest uppercase mb-1">Leads Gerados</p>
             <h3 className="text-2xl font-black text-white">
@@ -315,7 +342,7 @@ export default function MarketingModule() {
               R$ {cac.toFixed(2).replace('.', ',')}
             </h3>
             <span className="text-[10px] text-amber-400/60 block mt-1">
-              Fórmula: Investimento / {config.vendas} vendas
+              Fórmula: Investimento / {safeConfig.vendas} vendas
             </span>
             <div className="absolute top-0 right-0 p-3 opacity-10 text-[#f59e0b]"><TrendingUp size={40} /></div>
           </div>
@@ -375,7 +402,7 @@ export default function MarketingModule() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
-                {campanhas.map((camp) => {
+                {safeCampanhas.map((camp) => {
                   const campCpl = camp.leads > 0 ? camp.investido / camp.leads : 0;
                   
                   return (
@@ -507,3 +534,5 @@ export default function MarketingModule() {
     </div>
   );
 }
+
+
