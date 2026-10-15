@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ShieldAlert, Users, UserPlus, Key, Trash2, Edit3, Loader2, Link2, Settings, CheckCircle2, Zap, Calculator } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
+import { userService } from '../services/userService';
 import ReverseCalculator from '../components/ReverseCalculator';
 
 export default function AdminModule() {
@@ -33,10 +33,11 @@ export default function AdminModule() {
 
   const fetchUsers = async () => {
     setLoading(true);
-    if (!supabase) return;
-    const { data, error } = await supabase.from('usuarios').select('*').order('created_at', { ascending: false });
-    if (!error && data) {
+    try {
+      const data = await userService.getUsers();
       setUsuarios(data);
+    } catch (e) {
+      console.error('Erro ao buscar usuários:', e);
     }
     setLoading(false);
   };
@@ -46,18 +47,17 @@ export default function AdminModule() {
     if (!novoUser.nome || !novoUser.usuario || !novoUser.senha) return;
     
     setSalvando(true);
-    const { data, error } = await supabase.from('usuarios').insert([{
+    const result = await userService.createUser({
       nome: novoUser.nome,
       usuario: novoUser.usuario,
       senha: novoUser.senha,
-      cargo: novoUser.cargo,
-      status: 'Ativo'
-    }]).select();
+      cargo: novoUser.cargo
+    });
 
-    if (error) {
-      alert('Erro ao criar usuário: ' + error.message);
-    } else if (data) {
-      setUsuarios([...data, ...usuarios]);
+    if (!result.success) {
+      alert('Aviso: ' + (result.error || 'Erro ao criar usuário'));
+    } else if (result.data) {
+      setUsuarios(prev => [result.data, ...prev.filter(u => u.id !== result.data.id)]);
       setIsModalOpen(false);
       setNovoUser({ nome: '', usuario: '', senha: '', cargo: 'SDR' });
     }
@@ -70,11 +70,11 @@ export default function AdminModule() {
       return;
     }
     if (window.confirm("Tem certeza que deseja remover este usuário permanentemente?")) {
-      const { error } = await supabase.from('usuarios').delete().eq('id', id);
-      if (!error) {
+      const result = await userService.deleteUser(id, cargo);
+      if (result.success) {
         setUsuarios(usuarios.filter(u => u.id !== id));
       } else {
-        alert('Erro ao remover: ' + error.message);
+        alert('Erro ao remover: ' + (result.error || 'Falha ao excluir'));
       }
     }
   };

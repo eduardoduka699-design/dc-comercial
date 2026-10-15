@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Shield, ArrowRight, User, Lock, Zap, Loader2, UserPlus, Eye, EyeOff, KeyRound } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { userService } from '../services/userService';
 
 export default function Login({ onLogin }) {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -21,127 +21,64 @@ export default function Login({ onLogin }) {
     setError('');
 
     try {
-      const cleanUser = username.trim().toLowerCase();
-      const cleanPass = password.trim();
-
-      if (!supabase) throw new Error('Supabase Client not initialized');
-
       if (isResetting) {
-        if (!cleanUser || !cleanPass) {
+        if (!username.trim() || !password.trim()) {
           setError('Preencha o usuário e a nova senha.');
           setLoading(false);
           return;
         }
 
-        // Verifica se usuário existe
-        const { data: existing } = await supabase
-          .from('usuarios')
-          .select('id')
-          .eq('usuario', cleanUser)
-          .single();
-
-        if (!existing) {
-          setError('Usuário não encontrado.');
+        const res = await userService.resetPassword(username, password);
+        if (!res.success) {
+          setError(res.error || 'Erro ao redefinir a senha.');
           setLoading(false);
           return;
         }
 
-        // Atualiza a senha
-        const { error: updateError } = await supabase
-          .from('usuarios')
-          .update({ senha: cleanPass })
-          .eq('usuario', cleanUser);
-
-        if (updateError) {
-          setError('Erro ao redefinir a senha.');
-          setLoading(false);
-          return;
-        }
-
-        alert('Senha redefinida com sucesso! Faça login.');
+        alert('Senha redefinida com sucesso! Faça login com a nova senha.');
         setIsResetting(false);
         setPassword('');
         
       } else if (isRegistering) {
-        if (!nome.trim() || !cleanUser || !cleanPass) {
+        if (!nome.trim() || !username.trim() || !password.trim()) {
           setError('Preencha todos os campos.');
           setLoading(false);
           return;
         }
 
-        // Verifica se usuário já existe
-        const { data: existing } = await supabase
-          .from('usuarios')
-          .select('id')
-          .eq('usuario', cleanUser)
-          .single();
-
-        if (existing) {
-          setError('Este usuário já está em uso.');
-          setLoading(false);
-          return;
-        }
-
-        // Se for gestor, anexa o título ao cargo
         const finalCargo = isGestor ? `${cargo} + Gestor` : cargo;
 
-        // Cria o usuário com cargo selecionado
-        const { data, error: insertError } = await supabase
-          .from('usuarios')
-          .insert([{
-            nome: nome.trim(),
-            usuario: cleanUser,
-            senha: cleanPass,
-            cargo: finalCargo,
-            status: 'Ativo'
-          }])
-          .select()
-          .single();
+        const res = await userService.createUser({
+          nome,
+          usuario: username,
+          senha: password,
+          cargo: finalCargo
+        });
 
-        if (insertError) {
-          setError('Erro ao criar conta. Tente novamente.');
+        if (!res.success) {
+          setError(res.error || 'Erro ao criar conta.');
           setLoading(false);
           return;
         }
 
-        // Faz login automático após criar
-        onLogin(data.cargo);
+        // Login automático com o cargo cadastrado
+        onLogin(finalCargo);
         
       } else {
         // Fluxo de Login
-        // Backdoor de admin supremo
-        if ((cleanUser === 'addouder' || cleanUser === 'addouer') && (cleanPass.toLowerCase() === 'addouer' || cleanPass.toLowerCase() === 'addouder')) {
-          onLogin('Admin Supremo');
+        const res = await userService.loginUser(username, password);
+
+        if (!res.success) {
+          setError(res.error || 'Credenciais inválidas. Tente novamente.');
           setLoading(false);
           return;
         }
 
-        const { data, error: dbError } = await supabase
-          .from('usuarios')
-          .select('*')
-          .eq('usuario', cleanUser)
-          .eq('senha', cleanPass)
-          .single();
-
-        if (dbError || !data) {
-          setError('Credenciais inválidas. Tente novamente.');
-          setLoading(false);
-          return;
-        }
-
-        if (data.status !== 'Ativo') {
-          setError('Sua conta está inativa. Fale com um administrador.');
-          setLoading(false);
-          return;
-        }
-
-        await supabase.from('usuarios').update({ ultimo_acesso: new Date().toISOString() }).eq('id', data.id);
-        
-        onLogin(data.cargo);
+        onLogin(res.user.cargo);
       }
     } catch (err) {
-      console.error('Erro:', err);
-      setError('Erro de conexão. Tente novamente.');
+      console.error('Erro no fluxo de login:', err);
+      setError('Erro ao processar. Tente novamente.');
     }
     setLoading(false);
   };
