@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Target, TrendingUp, Users, Bell, Sun, Moon, Calendar as CalendarIcon, Download, LayoutDashboard, Database, Trophy, Calculator, LogOut, ArrowLeft } from 'lucide-react';
+import { Target, TrendingUp, Users, Bell, Sun, Moon, Download, LayoutDashboard, Database, Trophy, Calculator, LogOut, ArrowLeft } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +8,7 @@ import FunnelView from '../components/FunnelView';
 import Projection from '../components/Projection';
 import Ranking from '../components/Ranking';
 import ReverseCalculator from '../components/ReverseCalculator';
+import DatePicker from '../components/DatePicker';
 import { defaultGoals, baseMetrics, sdrChartData, bdrChartData, closerChartData } from '../data/mockData';
 
 export default function ComercialModule() {
@@ -79,7 +80,7 @@ export default function ComercialModule() {
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Relatorio_LeiSeca_${dateFilter}_${activeTab.toUpperCase()}.pdf`);
+      pdf.save(`Relatorio_LeiSeca_${customDate || dateFilter}_${activeTab.toUpperCase()}.pdf`);
     } catch (err) {
       console.error('Erro ao gerar PDF', err);
     }
@@ -87,12 +88,22 @@ export default function ComercialModule() {
 
   const getFilteredMetrics = () => {
     let multiplier = 1;
-    if (dateFilter === 'Hoje' || customDate) multiplier = 0.05; 
+    if (dateFilter === 'Hoje') multiplier = 0.05; 
     if (dateFilter === 'Semana') multiplier = 0.25; 
+    if (customDate) {
+      // Gera variação consistente baseada no dia específico
+      let hash = 0;
+      for (let i = 0; i < customDate.length; i++) {
+        hash = (hash << 5) - hash + customDate.charCodeAt(i);
+        hash |= 0;
+      }
+      const variance = ((Math.abs(hash) % 20) - 10) / 1000;
+      multiplier = Math.max(0.03, 0.05 + variance);
+    }
     
     const funnelType = localStorage.getItem('dc-leiseca-funnel-type') || 'com_reuniao';
     const adjusted = { ...metrics };
-    const current = adjusted[activeTab];
+    const current = adjusted[activeTab] || {};
     const newMetrics = {};
     Object.keys(current).forEach(k => {
       if (funnelType === 'sem_reuniao' && (k === 'consultasAgendadas' || k === 'consultasRealizadas')) {
@@ -161,18 +172,23 @@ export default function ComercialModule() {
           
           <div className="flex items-center gap-3">
             <div className={`flex items-center border rounded-lg p-1 mr-4 ${isDarkMode ? 'bg-[#151515] border-white/10' : 'bg-white border-gray-200'}`}>
-              <div className={`flex px-2 py-1 items-center border-r mr-2 ${isDarkMode ? 'border-white/10' : 'border-gray-200'}`}>
-                <CalendarIcon size={14} className={`mr-2 ${isDarkMode ? 'text-white/50' : 'text-gray-400'}`} />
-                <input 
-                  type="date" 
-                  value={customDate}
-                  onChange={(e) => {
-                    setCustomDate(e.target.value);
+              {/* Custom Date Picker Popover */}
+              <div className={`border-r mr-1 pr-1 ${isDarkMode ? 'border-white/10' : 'border-gray-200'}`}>
+                <DatePicker 
+                  selectedDate={customDate}
+                  onSelectDate={(dateStr) => {
+                    setCustomDate(dateStr);
                     setDateFilter('Calendário');
                   }}
-                  className={`bg-transparent text-xs focus:outline-none ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
+                  onClear={() => {
+                    setCustomDate('');
+                    setDateFilter('Mês');
+                  }}
+                  isDarkMode={isDarkMode}
                 />
               </div>
+
+              {/* Quick Period Buttons */}
               {['Hoje', 'Semana', 'Mês'].map(f => (
                 <button 
                   key={f}
@@ -181,8 +197,8 @@ export default function ComercialModule() {
                     setCustomDate('');
                   }}
                   className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                    dateFilter === f 
-                      ? isDarkMode ? 'bg-white/10 text-white' : 'bg-gray-200 text-gray-900'
+                    dateFilter === f && !customDate
+                      ? isDarkMode ? 'bg-white/10 text-white font-bold' : 'bg-gray-200 text-gray-900 font-bold'
                       : isDarkMode ? 'text-white/50 hover:text-white' : 'text-gray-500 hover:text-gray-900'
                   }`}
                 >
@@ -212,7 +228,15 @@ export default function ComercialModule() {
             <div className="flex justify-between items-end mb-8">
               <div>
                 <h2 className="text-3xl font-bold mb-1">Boa tarde, Equipe.</h2>
-                <p className={`text-sm ${isDarkMode ? 'text-white/50' : 'text-gray-500'}`}>Visão executiva e controle do setor comercial.</p>
+                <p className={`text-sm ${isDarkMode ? 'text-white/50' : 'text-gray-500'}`}>
+                  Visão executiva e controle do setor comercial {customDate ? (
+                    <span className="text-brand-blue font-bold ml-1">
+                      • Filtrado para o dia {customDate.split('-').reverse().join('/')}
+                    </span>
+                  ) : (
+                    <span>• Período: {dateFilter}</span>
+                  )}
+                </p>
               </div>
               
               <div className="flex gap-3" data-html2canvas-ignore="true">
