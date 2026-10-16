@@ -37,6 +37,35 @@ export default function ComercialModule() {
     localStorage.setItem('dc-leiseca-metrics', JSON.stringify(metrics));
   }, [metrics]);
 
+  useEffect(() => {
+    const handleSync = () => {
+      try {
+        const savedGoals = localStorage.getItem('dc-leiseca-goals');
+        if (savedGoals) {
+          setGoals(JSON.parse(savedGoals));
+        }
+        const savedMetrics = localStorage.getItem('dc-leiseca-metrics');
+        if (savedMetrics) {
+          setMetrics(JSON.parse(savedMetrics));
+        }
+      } catch (err) {
+        console.error('Erro ao sincronizar metas/métricas:', err);
+      }
+    };
+
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('focus', handleSync);
+    window.addEventListener('dc-goals-updated', handleSync);
+    window.addEventListener('dc-metrics-updated', handleSync);
+
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('focus', handleSync);
+      window.removeEventListener('dc-goals-updated', handleSync);
+      window.removeEventListener('dc-metrics-updated', handleSync);
+    };
+  }, []);
+
   const handleExportPDF = async () => {
     if (!exportRef.current) return;
     try {
@@ -226,7 +255,7 @@ export default function ComercialModule() {
             )}
 
             {activeMenu === 'funnel' && (
-              <FunnelView role={activeTab} metrics={metrics} setMetrics={setMetrics} />
+              <FunnelView role={activeTab} metrics={metrics} setMetrics={setMetrics} goals={goals[activeTab]} />
             )}
 
             {activeMenu === 'ranking' && (
@@ -237,4 +266,3 @@ export default function ComercialModule() {
     </div>
   );
 }
-

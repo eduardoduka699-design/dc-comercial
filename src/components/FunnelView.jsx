@@ -1,7 +1,7 @@
 import React from 'react';
 import { Target, Users, Phone, Star, Calendar, CheckSquare, FileText, CheckCircle2 } from 'lucide-react';
 
-export default function FunnelView({ role, metrics, setMetrics }) {
+export default function FunnelView({ role, metrics, setMetrics, goals }) {
   const funnelType = localStorage.getItem('dc-leiseca-funnel-type') || 'com_reuniao';
 
   const funnelConfigs = {
@@ -41,7 +41,7 @@ export default function FunnelView({ role, metrics, setMetrics }) {
     }
   };
 
-  const config = funnelConfigs[role];
+  const config = funnelConfigs[role] || funnelConfigs.sdr;
   const roleMetrics = metrics[role] || {};
 
   const handleChange = (id, value) => {
@@ -54,9 +54,20 @@ export default function FunnelView({ role, metrics, setMetrics }) {
     }));
   };
 
+  const handleApplyGoalsToMetrics = () => {
+    if (!goals) return;
+    setMetrics(prev => ({
+      ...prev,
+      [role]: {
+        ...prev[role],
+        ...goals
+      }
+    }));
+  };
+
   const calculateConversion = (currentIndex, val) => {
     if (currentIndex === 0) return null;
-    const prevId = config.stages[currentIndex - 1].id;
+    const prevId = config.stages[currentIndex - 1]?.id;
     const prevVal = roleMetrics[prevId] || 0;
     if (!prevVal || prevVal === 0) return 0;
     return (val / prevVal) * 100;
@@ -84,7 +95,19 @@ export default function FunnelView({ role, metrics, setMetrics }) {
             <Users size={20} className="text-brand-blue" />
             <h2 className="text-lg font-bold text-text-main">{config.title}</h2>
           </div>
-          <span className="text-xs bg-brand-blue/20 text-brand-blue px-2 py-1 rounded">Lançamento de Resultados</span>
+          <div className="flex items-center gap-2">
+            {goals && (
+              <button
+                type="button"
+                onClick={handleApplyGoalsToMetrics}
+                className="text-xs bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue font-bold px-3 py-1 rounded-lg border border-brand-blue/30 transition-colors flex items-center gap-1.5"
+                title="Preencher com as metas definidas na Engenharia Reversa"
+              >
+                <Target size={13} /> Sincronizar com Metas
+              </button>
+            )}
+            <span className="text-xs bg-brand-blue/20 text-brand-blue px-2 py-1 rounded">Lançamento de Resultados</span>
+          </div>
         </div>
         
         <p className="text-xs text-text-muted mb-6">Insira os volumes reais alcançados neste mês para atualizar os gráficos do Dashboard automaticamente.</p>
@@ -92,9 +115,10 @@ export default function FunnelView({ role, metrics, setMetrics }) {
         <div className="space-y-4">
           {config.stages.map((stage, index) => {
             const Icon = stage.icon;
-            const val = roleMetrics[stage.id] || 0;
+            const val = roleMetrics[stage.id] ?? 0;
             const conversion = calculateConversion(index, val);
             const status = getBenchmarkStatus(conversion, stage.benchmark);
+            const stageGoal = goals?.[stage.id];
 
             return (
               <div key={stage.id}>
@@ -102,6 +126,11 @@ export default function FunnelView({ role, metrics, setMetrics }) {
                   <div className="flex items-center gap-2">
                     <Icon size={14} className={stage.color.replace('bg-', 'text-')} />
                     <label className="text-sm font-medium text-text-main">{stage.label}</label>
+                    {stageGoal !== undefined && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-blue/10 text-brand-blue font-bold border border-brand-blue/20 flex items-center gap-1">
+                        <Target size={10} /> Meta: {Number(stageGoal).toLocaleString('pt-BR')}
+                      </span>
+                    )}
                   </div>
                   {conversion !== null && (
                     <span className={`text-xs font-bold ${status === 'good' ? 'text-[#10b981]' : 'text-[#f59e0b]'}`}>
@@ -153,23 +182,38 @@ export default function FunnelView({ role, metrics, setMetrics }) {
 
       {/* Right Column - Visual Funnel */}
       <div className="bg-bg-card p-6 rounded-2xl border border-border flex flex-col">
-        <h3 className="text-sm font-bold text-text-main mb-8">Taxas de Conversão Reais</h3>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-sm font-bold text-text-main">Taxas de Conversão Reais</h3>
+          {goals && (
+            <span className="text-[10px] text-brand-blue font-semibold bg-brand-blue/10 px-2.5 py-1 rounded-full border border-brand-blue/20 flex items-center gap-1">
+              <Target size={11} /> Metas Conectadas
+            </span>
+          )}
+        </div>
         
         {/* CSS Clip-Path Funnel */}
-        <div className="flex-1 flex flex-col items-center justify-center py-8">
+        <div className="flex-1 flex flex-col items-center justify-center py-6">
           <div 
-            className="w-full max-w-[300px] h-[300px] flex flex-col"
-            style={{ clipPath: 'polygon(0 0, 100% 0, 65% 100%, 35% 100%)' }}
+            className="w-full max-w-[320px] h-[320px] flex flex-col"
+            style={{ clipPath: 'polygon(0 0, 100% 0, 68% 100%, 32% 100%)' }}
           >
             {config.stages.map((stage) => {
-              const val = roleMetrics[stage.id] || 0;
+              const val = roleMetrics[stage.id] ?? 0;
               const Icon = stage.icon;
+              const stageGoal = goals?.[stage.id];
               return (
-                <div key={stage.id} className={`flex-1 flex flex-col items-center justify-center ${stage.color}`}>
-                  <div className="flex items-center gap-1 text-white/90 text-xs mb-1 font-medium">
+                <div key={stage.id} className={`flex-1 flex flex-col items-center justify-center ${stage.color} p-1 text-center`}>
+                  <div className="flex items-center gap-1 text-white/90 text-xs mb-0.5 font-medium">
                     <Icon size={12} /> {stage.label}
                   </div>
-                  <div className="text-2xl font-bold text-white leading-none">{val}</div>
+                  <div className="text-2xl font-bold text-white leading-none">
+                    {Number(val).toLocaleString('pt-BR')}
+                  </div>
+                  {stageGoal !== undefined && (
+                    <div className="text-[10px] text-white/80 font-medium mt-0.5">
+                      Meta: {Number(stageGoal).toLocaleString('pt-BR')}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -204,7 +248,7 @@ export default function FunnelView({ role, metrics, setMetrics }) {
           
           <div className="flex justify-between items-center p-3 rounded-lg border border-[#f97316]/20 bg-[#f97316]/5 mt-4">
             <span className="text-xs font-bold text-text-main">
-              Conversão Geral ({config.stages[0].label} - {config.stages[config.stages.length-1].label})
+              Conversão Geral ({config.stages[0]?.label} - {config.stages[config.stages.length-1]?.label})
             </span>
             <span className="text-xs font-bold text-[#f97316]">
               {totalConversion.toFixed(1)}%

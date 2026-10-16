@@ -13,6 +13,10 @@ export default function AdminModule() {
   const [salvando, setSalvando] = useState(false);
   const [novoUser, setNovoUser] = useState({ nome: '', usuario: '', senha: '', cargo: 'SDR' });
   
+  // Editar Usuário State
+  const [editingUser, setEditingUser] = useState(null);
+  const [editForm, setEditForm] = useState({ nome: '', cargo: 'SDR', status: 'Ativo', senha: '' });
+
   // Integrações State
   const [activeCrmModal, setActiveCrmModal] = useState(null);
   const [apiKey, setApiKey] = useState('');
@@ -61,6 +65,41 @@ export default function AdminModule() {
       setUsuarios(prev => [result.data, ...prev.filter(u => u.id !== result.data.id)]);
       setIsModalOpen(false);
       setNovoUser({ nome: '', usuario: '', senha: '', cargo: 'SDR' });
+    }
+    setSalvando(false);
+  };
+
+  const handleOpenEdit = (user) => {
+    setEditingUser(user);
+    setEditForm({
+      nome: user.nome || '',
+      cargo: user.cargo || 'SDR',
+      status: user.status || 'Ativo',
+      senha: ''
+    });
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    if (!editForm.nome.trim()) {
+      alert('Por favor, informe o nome do colaborador.');
+      return;
+    }
+
+    setSalvando(true);
+    const result = await userService.updateUser(editingUser.id, {
+      nome: editForm.nome,
+      cargo: editForm.cargo,
+      status: editForm.status,
+      senha: editForm.senha
+    });
+
+    if (result.success && result.data) {
+      setUsuarios(prev => prev.map(u => u.id === editingUser.id ? { ...u, ...result.data } : u));
+      setEditingUser(null);
+    } else {
+      alert('Erro ao atualizar usuário: ' + (result.error || 'Falha ao salvar'));
     }
     setSalvando(false);
   };
@@ -118,8 +157,6 @@ export default function AdminModule() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col" translate="no">
-      
-
       <div className="flex flex-1 overflow-hidden">
         <aside className="w-64 border-r border-white/10 bg-[#101010] flex flex-col shrink-0 p-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-4 px-3">Gestão Master</p>
@@ -157,7 +194,7 @@ export default function AdminModule() {
               <div className="mb-10 flex justify-between items-end">
                 <div>
                   <h2 className="text-3xl font-display font-black mb-2">Controle de Acessos</h2>
-                  <p className="text-white/50 max-w-2xl">Gerencie quem pode acessar a plataforma. Dados sincronizados em tempo real.</p>
+                  <p className="text-white/50 max-w-2xl">Gerencie quem pode acessar a plataforma. Clique no nome ou no botão de editar para alterar dados do usuário.</p>
                 </div>
                 <button 
                   onClick={() => setIsModalOpen(true)}
@@ -194,7 +231,16 @@ export default function AdminModule() {
                       <tbody className="divide-y divide-white/10">
                         {(Array.isArray(usuarios) ? usuarios : []).map((user) => (
                           <tr key={user.id} className="hover:bg-white/5 transition-colors group">
-                            <td className="p-4 pl-6 font-bold text-white">{user.nome}</td>
+                            <td 
+                              className="p-4 pl-6 font-bold text-white cursor-pointer hover:text-brand-blue transition-colors group/cell"
+                              onClick={() => handleOpenEdit(user)}
+                              title="Clique para editar usuário"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span>{user.nome}</span>
+                                <Edit3 size={14} className="text-white/20 group-hover/cell:text-brand-blue transition-colors" />
+                              </div>
+                            </td>
                             <td className="p-4 text-white/60 font-mono text-xs">{user.usuario}</td>
                             <td className="p-4">
                               <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest ${user.cargo === 'Admin Supremo' ? 'bg-red-500/20 text-red-500 border border-red-500/30' : 'bg-brand-blue/10 text-brand-blue border border-brand-blue/30'}`}>
@@ -209,10 +255,21 @@ export default function AdminModule() {
                             </td>
                             <td className="p-4 text-white/40 text-xs">{formatDate(user.ultimo_acesso)}</td>
                             <td className="p-4 text-right pr-6">
-                              <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="flex items-center justify-end gap-2">
+                                <button 
+                                  onClick={() => handleOpenEdit(user)} 
+                                  className="p-2 bg-white/5 hover:bg-brand-blue/20 text-white/70 hover:text-brand-blue rounded-lg transition-colors border border-white/5 hover:border-brand-blue/30" 
+                                  title="Editar Usuário"
+                                >
+                                  <Edit3 size={15} />
+                                </button>
                                 {user.cargo !== 'Admin Supremo' && (
-                                  <button onClick={() => removerUsuario(user.id, user.cargo)} className="text-white/50 hover:text-red-500 transition-colors" title="Excluir">
-                                    <Trash2 size={16} />
+                                  <button 
+                                    onClick={() => removerUsuario(user.id, user.cargo)} 
+                                    className="p-2 bg-white/5 hover:bg-red-500/20 text-white/70 hover:text-red-500 rounded-lg transition-colors border border-white/5 hover:border-red-500/30" 
+                                    title="Excluir Usuário"
+                                  >
+                                    <Trash2 size={15} />
                                   </button>
                                 )}
                               </div>
@@ -280,7 +337,7 @@ export default function AdminModule() {
 
           {activeTab === 'metas' && (
             <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <ReverseCalculator hideNavigation />
+              <ReverseCalculator hideNavigation onSaveGoals={() => {}} />
             </div>
           )}
 
@@ -319,6 +376,107 @@ export default function AdminModule() {
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-colors">Cancelar</button>
                 <button type="submit" disabled={salvando} className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors flex justify-center items-center">
                   {salvando ? <Loader2 size={20} className="animate-spin" /> : 'Salvar Usuário'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar Usuário */}
+      {editingUser && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={() => setEditingUser(null)}>
+          <div className="bg-[#151515] border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-brand-blue/10 text-brand-blue rounded-xl border border-brand-blue/20">
+                  <Edit3 size={20} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-display font-bold text-white">Editar Usuário</h3>
+                  <p className="text-xs text-white/50">Altere o nome e configurações de acesso</p>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2 block">Nome Completo</label>
+                <input 
+                  required 
+                  type="text" 
+                  value={editForm.nome} 
+                  onChange={e => setEditForm({...editForm, nome: e.target.value})} 
+                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors" 
+                  placeholder="Nome do colaborador" 
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2 block">Login de Acesso</label>
+                <input 
+                  type="text" 
+                  disabled 
+                  value={editingUser.usuario} 
+                  className="w-full bg-[#0a0a0a]/50 border border-white/5 rounded-xl px-4 py-3 text-white/40 font-mono cursor-not-allowed" 
+                />
+                <p className="text-[10px] text-white/30 mt-1">O login é identificador único do usuário.</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2 block">Cargo</label>
+                  <select 
+                    value={editForm.cargo} 
+                    onChange={e => setEditForm({...editForm, cargo: e.target.value})} 
+                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors text-sm"
+                  >
+                    <option value="SDR">SDR (Recepção)</option>
+                    <option value="Closer">Closer (Especialista)</option>
+                    <option value="BDR">BDR (Prospecção)</option>
+                    <option value="Gestor">Gestor / Coordenador</option>
+                    <option value="Admin Supremo">Admin Supremo</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2 block">Status</label>
+                  <select 
+                    value={editForm.status} 
+                    onChange={e => setEditForm({...editForm, status: e.target.value})} 
+                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-blue transition-colors text-sm"
+                  >
+                    <option value="Ativo">Ativo</option>
+                    <option value="Inativo">Inativo</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2 block">Redefinir Senha (Opcional)</label>
+                <input 
+                  type="password" 
+                  value={editForm.senha} 
+                  onChange={e => setEditForm({...editForm, senha: e.target.value})} 
+                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white font-mono focus:outline-none focus:border-brand-blue transition-colors" 
+                  placeholder="Deixe em branco para manter a atual" 
+                />
+              </div>
+
+              <div className="flex gap-4 mt-8">
+                <button 
+                  type="button" 
+                  onClick={() => setEditingUser(null)} 
+                  className="flex-1 bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={salvando} 
+                  className="flex-1 bg-brand-blue hover:bg-brand-blue/90 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors flex justify-center items-center shadow-lg shadow-brand-blue/20"
+                >
+                  {salvando ? <Loader2 size={20} className="animate-spin" /> : 'Salvar Alterações'}
                 </button>
               </div>
             </form>
@@ -367,4 +525,3 @@ export default function AdminModule() {
     </div>
   );
 }
-

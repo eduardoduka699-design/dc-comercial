@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calculator, ArrowRight, Save, Settings2 } from 'lucide-react';
+import { Calculator, ArrowRight, Save, Settings2, Check } from 'lucide-react';
 
 export default function ReverseCalculator({ onSaveGoals }) {
   const [targetSales, setTargetSales] = useState(20);
@@ -38,41 +38,60 @@ export default function ReverseCalculator({ onSaveGoals }) {
 
   const faturamento = vendas * (ticketMedio || 0);
 
+  const [applied, setApplied] = useState(false);
+
   const handleApply = () => {
     let newGoals = {
       sdr: {
         leadsRecebidos: leads,
         motoristasContatados: contatos,
-        casosQualificados: casosQualificados
+        casosQualificados: casosQualificados,
+        consultasAgendadas: funnelType === 'com_reuniao' ? reunioesMarcadas : 0
       },
       closer: {
+        consultasRealizadas: funnelType === 'com_reuniao' ? reunioesRealizadas : 0,
+        casosQualificados: casosQualificados,
         contratosEnviados: funnelType === 'com_reuniao' ? reunioesRealizadas : casosQualificados,
         contratosFechados: vendas,
         honorariosMedios: ticketMedio
+      },
+      bdr: {
+        processosMapeados: leads * 2,
+        contatosAtivos: contatos,
+        consultasAgendadasOut: funnelType === 'com_reuniao' ? Math.floor(reunioesMarcadas * 0.3) : 0,
+        casosQualificadosOut: Math.floor(casosQualificados * 0.3)
       }
     };
 
-    if (funnelType === 'com_reuniao') {
-      newGoals.sdr.consultasAgendadas = reunioesMarcadas;
-      newGoals.closer.consultasRealizadas = reunioesRealizadas;
-    } else {
-      // Para funil direto, zera ou remove metas de reunião
-      newGoals.sdr.consultasAgendadas = 0;
-      newGoals.closer.consultasRealizadas = 0;
+    // Salva o tipo de funil e as metas no localStorage para o Dashboard e Funis
+    try {
+      localStorage.setItem('dc-leiseca-goals', JSON.stringify(newGoals));
+      localStorage.setItem('dc-leiseca-funnel-type', funnelType);
+
+      // Também sincroniza as métricas dos funis de SDR, Closer e BDR
+      const currentMetricsSaved = localStorage.getItem('dc-leiseca-metrics');
+      let currentMetrics = currentMetricsSaved ? JSON.parse(currentMetricsSaved) : {};
+      const updatedMetrics = {
+        ...currentMetrics,
+        sdr: { ...(currentMetrics.sdr || {}), ...newGoals.sdr },
+        closer: { ...(currentMetrics.closer || {}), ...newGoals.closer },
+        bdr: { ...(currentMetrics.bdr || {}), ...newGoals.bdr }
+      };
+      localStorage.setItem('dc-leiseca-metrics', JSON.stringify(updatedMetrics));
+
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('dc-goals-updated', { detail: newGoals }));
+      window.dispatchEvent(new CustomEvent('dc-metrics-updated', { detail: updatedMetrics }));
+    } catch (e) {
+      console.error('Erro ao salvar metas:', e);
     }
 
-    // Mantendo bdr mockado para compatibilidade se o painel usar
-    newGoals.bdr = {
-      processosMapeados: leads * 2,
-      contatosAtivos: contatos,
-      consultasAgendadasOut: funnelType === 'com_reuniao' ? Math.floor(reunioesMarcadas * 0.3) : 0,
-      casosQualificadosOut: Math.floor(casosQualificados * 0.3)
-    };
+    if (typeof onSaveGoals === 'function') {
+      onSaveGoals(newGoals);
+    }
 
-    // Salva o tipo de funil para o Dashboard adaptar
-    localStorage.setItem('dc-leiseca-funnel-type', funnelType);
-
-    onSaveGoals(newGoals);
+    setApplied(true);
+    setTimeout(() => setApplied(false), 3500);
   };
 
   return (
@@ -184,14 +203,25 @@ export default function ReverseCalculator({ onSaveGoals }) {
         </div>
       </div>
 
-      <div className="flex justify-end">
-        <button 
-          onClick={handleApply}
-          className="flex items-center gap-2 px-6 py-3 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-lg text-sm font-bold transition-colors"
-        >
-          <Save size={18} />
-          Aplicar como Metas Oficiais do Mês
-        </button>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        {applied ? (
+          <span className="text-xs font-bold text-[#10b981] flex items-center gap-1.5 animate-in fade-in">
+            <Check size={16} /> Metas aplicadas com sucesso nos funis de SDR e Closer!
+          </span>
+        ) : <div />}
+        <div>
+          <button 
+            onClick={handleApply}
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all shadow-lg ${
+              applied 
+                ? 'bg-[#10b981] text-white shadow-[#10b981]/20' 
+                : 'bg-brand-blue hover:bg-brand-blue/90 text-white shadow-brand-blue/20'
+            }`}
+          >
+            {applied ? <Check size={18} /> : <Save size={18} />}
+            {applied ? 'Metas Aplicadas nos Funis!' : 'Aplicar como Metas Oficiais do Mês'}
+          </button>
+        </div>
       </div>
     </div>
   );
