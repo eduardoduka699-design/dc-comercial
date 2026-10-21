@@ -6,7 +6,7 @@ const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_-0ZXSL
 const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
 
 export default async function handler(req, res) {
-  // Habilita CORS para o Legendary Hub
+  // CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -19,65 +19,102 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // GET: Teste de conectividade (permite abrir no navegador para verificar se o webhook está ativo)
+  // GET: Health Check e instruções
   if (req.method === 'GET') {
     return res.status(200).json({
       status: 'online',
       service: 'DC Comercial - Webhook Legendary Hub II',
       timestamp: new Date().toISOString(),
-      url_para_configurar: 'https://dc-comercial.vercel.app/api/webhook/legendary'
+      endpoint: 'https://dc-comercial.vercel.app/api/webhook/legendary'
     });
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método não permitido. Envie um POST.' });
+    return res.status(405).json({ error: 'Método não permitido. Utilize POST.' });
   }
 
   try {
     const payload = req.body || {};
     const receivedAt = new Date().toISOString();
 
-    console.log('[Legendary Hub] Evento recebido:', JSON.stringify(payload, null, 2));
+    console.log('[Legendary Hub] Webhook Recebido:', JSON.stringify(payload, null, 2));
 
-    // Salva o evento bruto no Supabase para auditoria em tempo real
-    let dbSuccess = false;
+    // Extrai dados do ticket / mensagem
+    const ticket = payload.ticket || payload.data?.ticket || payload.data || payload;
+    const contact = ticket.contact || payload.contact || {};
+    
+    const leadNome = contact.name || payload.name || ticket.name || 'Lead WhatsApp';
+    const leadTelefone = contact.number || contact.phone || payload.phone || payload.number || '';
+    
+    // Normaliza tags
+    const rawTags = ticket.tags || payload.tags || [];
+    const tags = Array.isArray(rawTags) 
+      ? rawTags.map(t => typeof t === 'string' ? t.toLowerCase() : (t?.name || '').toLowerCase())
+      : [];
+
+    const status = (ticket.status || payload.status || '').toLowerCase(); // pending, open, closed
+    const queue = ticket.queue?.name || payload.queue?.name || payload.setor || '';
+    const atendente = ticket.user?.name || payload.user?.name || '';
+    const valor = Number(ticket.value || ticket.amount || payload.value || payload.amount || 0);
+
+    // Mapeamento inteligente de funil de acordo com as regras da Lei Seca
+    const tagsString = tags.join(' ');
+    
+    const isQualificado = tagsString.includes('qualific') || tagsString.includes('viável') || tagsString.includes('perfil');
+    const isAgendado = tagsString.includes('agend') || tagsString.includes('consulta') || tagsString.includes('reuni') || tagsString.includes('marcad');
+    const isContratoEnviado = tagsString.includes('contrato enviado') || tagsString.includes('proposta') || tagsString.includes('enviad');
+    const isContratoFechado = tagsString.includes('fechad') || tagsString.includes('ganho') || tagsString.includes('pago') || tagsString.includes('honor');
+
+    // Determina a etapa principal no funil
+    let etapaFunil = 'recebido'; // Lead SDR
+    if (isContratoFechado) etapaFunil = 'fechado';
+    else if (isContratoEnviado) etapaFunil = 'contrato_enviado';
+    else if (isAgendado) etapaFunil = 'agendado';
+    else if (isQualificado) etapaFunil = 'qualificado';
+    else if (status === 'open' || status === 'aberto') etapaFunil = 'contatado';
+
+    const processedLead = {
+      nome: leadNome,
+      telefone: leadTelefone,
+      status_ticket: status,
+      tags: tags,
+      setor: queue,
+      atendente: atendente,
+      etapa_funil: etapaFunil,
+      valor_honorarios: valor,
+      atualizado_em: receivedAt
+    };
+
+    // Salva o evento e o lead no Supabase se disponível
+    let persisted = false;
     if (supabase) {
       try {
-        const { error } = await supabase.from('crm_events').insert([
+        await supabase.from('crm_events').insert([
           {
             crm: 'legendary',
-            event_type: payload.event || payload.action || payload.type || 'lead_update',
+            event_type: payload.event || payload.action || 'webhook',
             payload: payload,
             created_at: receivedAt
           }
         ]);
-        if (!error) dbSuccess = true;
-      } catch (dbErr) {
-        console.warn('[Legendary Hub] Erro ao gravar evento no Supabase:', dbErr.message);
+        persisted = true;
+      } catch (err) {
+        console.warn('[Legendary Hub] Tabela crm_events não encontrada no Supabase:', err.message);
       }
     }
 
-    // Normaliza dados do lead
-    const lead = {
-      nome: payload.name || payload.contact?.name || payload.data?.name || payload.nome || 'Lead WhatsApp',
-      telefone: payload.phone || payload.number || payload.contact?.number || payload.data?.number || '',
-      tags: payload.tags || payload.contact?.tags || payload.data?.tags || [],
-      etapa: payload.stage || payload.status || payload.event || 'recebido',
-      valor: Number(payload.value || payload.amount || 0),
-      timestamp: receivedAt
-    };
-
     return res.status(200).json({
       success: true,
-      message: 'Evento do Legendary Hub processado com sucesso!',
-      persisted_in_db: dbSuccess,
-      lead: lead
+      message: 'Lead do Legendary Hub processado com sucesso!',
+      persisted: persisted,
+      lead: processedLead
     });
+
   } catch (error) {
-    console.error('[Legendary Hub] Erro:', error);
+    console.error('[Legendary Hub] Erro ao processar:', error);
     return res.status(500).json({
       success: false,
-      error: 'Erro interno ao processar webhook',
+      error: 'Erro no processamento do webhook',
       details: error.message
     });
   }
