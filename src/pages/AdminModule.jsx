@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ShieldAlert, Users, UserPlus, Key, Trash2, Edit3, Loader2, Link2, Settings, CheckCircle2, Zap, Calculator } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, Users, UserPlus, Key, Trash2, Edit3, Loader2, Link2, Settings, CheckCircle2, Zap, Calculator, Copy, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { userService } from '../services/userService';
 import ReverseCalculator from '../components/ReverseCalculator';
@@ -20,6 +20,19 @@ export default function AdminModule() {
   // Integrações State
   const [activeCrmModal, setActiveCrmModal] = useState(null);
   const [apiKey, setApiKey] = useState('');
+  const [copiedWebhook, setCopiedWebhook] = useState(false);
+  const webhookUrl = 'https://dc-comercial.vercel.app/api/webhook/legendary';
+
+  const handleCopyWebhook = () => {
+    try {
+      navigator.clipboard.writeText(webhookUrl);
+      setCopiedWebhook(true);
+      setTimeout(() => setCopiedWebhook(false), 2500);
+    } catch {
+      alert('URL copiada: ' + webhookUrl);
+    }
+  };
+
   const [savedIntegrations, setSavedIntegrations] = useState(() => {
     const saved = localStorage.getItem('dc-leiseca-integrations');
     return saved ? JSON.parse(saved) : {};
@@ -487,34 +500,69 @@ export default function AdminModule() {
       {/* Modal API CRM */}
       {activeCrmModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={() => setActiveCrmModal(null)}>
-          <div className="bg-[#151515] border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+          <div className="bg-[#151515] border border-white/10 rounded-2xl p-8 max-w-lg w-full shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
                 <Link2 size={20} className="text-white" />
               </div>
               <div>
                 <h3 className="text-xl font-display font-bold text-white">Conectar {crms.find(c => c.id === activeCrmModal)?.name}</h3>
-                <p className="text-xs text-white/50">Autorize o Hub a ler os dados ponta a ponta.</p>
+                <p className="text-xs text-white/50">Sincronização em tempo real de leads e funis.</p>
               </div>
             </div>
             
+            {activeCrmModal === 'legendary' && (
+              <div className="mb-6 p-4 rounded-xl bg-brand-blue/10 border border-brand-blue/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-brand-blue uppercase tracking-wider flex items-center gap-1.5">
+                    <Zap size={14} /> Webhook em Tempo Real (Recomendado)
+                  </span>
+                  <span className="text-[10px] bg-brand-blue/20 text-brand-blue px-2 py-0.5 rounded font-bold">Ativo</span>
+                </div>
+                <p className="text-xs text-white/70 leading-relaxed">
+                  No seu <strong>Legendary Hub II</strong>, clique no botão azul <strong>+ Adicionar Projeto</strong> (ou em <strong>Integração Api</strong>) e cadastre esta URL para receber os leads na hora:
+                </p>
+                <div className="flex items-center gap-2 bg-[#0a0a0a] p-2 rounded-lg border border-white/10">
+                  <input 
+                    type="text" 
+                    readOnly 
+                    value={webhookUrl} 
+                    className="w-full bg-transparent text-xs text-brand-blue font-mono focus:outline-none select-all"
+                  />
+                  <button 
+                    type="button" 
+                    onClick={handleCopyWebhook} 
+                    className="px-3 py-1.5 bg-brand-blue hover:bg-brand-blue/90 text-white rounded-md text-xs font-bold transition-all flex items-center gap-1 shrink-0"
+                  >
+                    {copiedWebhook ? <Check size={14} /> : <Copy size={14} />}
+                    {copiedWebhook ? 'Copiado!' : 'Copiar'}
+                  </button>
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleSaveApi} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2 block">Chave de Integração (API Key / Token)</label>
+                <label className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2 block">
+                  {activeCrmModal === 'legendary' ? 'Token / Credencial da API (Opcional para puxar histórico)' : 'Chave de Integração (API Key / Token)'}
+                </label>
                 <input 
-                  required 
                   type="text" 
                   value={apiKey} 
                   onChange={e => setApiKey(e.target.value)} 
                   className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white font-mono focus:outline-none focus:border-[#10b981] transition-colors" 
-                  placeholder="Cole sua chave aqui..." 
+                  placeholder={activeCrmModal === 'legendary' ? 'Cole o Bearer Token gerado em Credenciais API...' : 'Cole sua chave aqui...'} 
                 />
-                <p className="text-[10px] text-white/30 mt-2">Você encontra essa chave nas configurações de desenvolvedor/integração do seu CRM.</p>
+                <p className="text-[10px] text-white/30 mt-2">
+                  {activeCrmModal === 'legendary' 
+                    ? 'No menu lateral do Legendary Hub II, clique em "Credenciais API" para gerar e copiar seu Token.' 
+                    : 'Você encontra essa chave nas configurações de desenvolvedor/integração do seu CRM.'}
+                </p>
               </div>
               <div className="flex gap-4 mt-8">
                 <button type="button" onClick={() => { setActiveCrmModal(null); setApiKey(''); }} className="flex-1 bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-colors">Cancelar</button>
                 <button type="submit" className="flex-1 bg-[#10b981] hover:bg-[#059669] text-white font-bold py-3 rounded-xl transition-colors flex justify-center items-center">
-                  Conectar CRM
+                  Salvar Conexão
                 </button>
               </div>
             </form>
