@@ -134,10 +134,11 @@ export default function AdminModule() {
 
   const handleSaveApi = (e) => {
     e.preventDefault();
-    if (apiKey.trim() === '') return;
+    if (!activeCrmModal) return;
+    const token = apiKey.trim() || 'webhook_active';
     setSavedIntegrations(prev => ({
       ...prev,
-      [activeCrmModal]: apiKey
+      [activeCrmModal]: token
     }));
     setActiveCrmModal(null);
     setApiKey('');
@@ -333,11 +334,33 @@ export default function AdminModule() {
                       </div>
                       
                       {isConnected ? (
-                        <button onClick={() => handleDisconnectApi(crm.id)} className="w-full py-3 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-xl text-sm font-bold transition-colors">
-                          Desconectar
-                        </button>
+                        <div className="flex gap-2 w-full">
+                          <button 
+                            onClick={() => {
+                              setActiveCrmModal(crm.id);
+                              const existing = savedIntegrations[crm.id];
+                              setApiKey(existing && existing !== 'webhook_active' ? existing : '');
+                            }} 
+                            className="flex-1 py-3 px-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold transition-colors text-white"
+                          >
+                            Configurações
+                          </button>
+                          <button 
+                            onClick={() => handleDisconnectApi(crm.id)} 
+                            className="py-3 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-xl text-xs font-bold transition-colors"
+                          >
+                            Desconectar
+                          </button>
+                        </div>
                       ) : (
-                        <button onClick={() => setActiveCrmModal(crm.id)} className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-colors">
+                        <button 
+                          onClick={() => {
+                            setActiveCrmModal(crm.id);
+                            const existing = savedIntegrations[crm.id];
+                            setApiKey(existing && existing !== 'webhook_active' ? existing : '');
+                          }} 
+                          className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-colors"
+                        >
                           Configurar API
                         </button>
                       )}
