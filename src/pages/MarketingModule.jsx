@@ -125,12 +125,12 @@ export default function MarketingModule() {
   const somaInvestimento = safeCampanhas.reduce((acc, c) => acc + (Number(c.investido) || 0), 0);
   const somaLeads = safeCampanhas.reduce((acc, c) => acc + (Number(c.leads) || 0), 0);
 
-  const totalInvestimento = safesafeConfig.modoCalculo === 'campanhas' ? somaInvestimento : (Number(safesafeConfig.manualInvestimento) || 0);
-  const totalLeads = safesafeConfig.modoCalculo === 'campanhas' ? somaLeads : (Number(safesafeConfig.manualLeads) || 0);
+  const totalInvestimento = safeConfig.modoCalculo === 'campanhas' ? somaInvestimento : (Number(safeConfig.manualInvestimento) || 0);
+  const totalLeads = safeConfig.modoCalculo === 'campanhas' ? somaLeads : (Number(safeConfig.manualLeads) || 0);
 
   const cpl = totalLeads > 0 ? totalInvestimento / totalLeads : 0;
-  const vendasCount = Number(safesafeConfig.vendas) || 0;
-  const ticketValue = Number(safesafeConfig.ticket) || 0;
+  const vendasCount = Number(safeConfig.vendas) || 0;
+  const ticketValue = Number(safeConfig.ticket) || 0;
   const cac = vendasCount > 0 ? totalInvestimento / vendasCount : 0;
   const faturamento = vendasCount * ticketValue;
   const roas = totalInvestimento > 0 ? faturamento / totalInvestimento : 0;
