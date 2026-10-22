@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ShieldAlert, Users, UserPlus, Key, Trash2, Edit3, Loader2, Link2, Settings, CheckCircle2, Zap, Calculator, Copy, Check } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, Users, UserPlus, Key, Trash2, Edit3, Loader2, Link2, Settings, CheckCircle2, Zap, Calculator, Copy, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { userService } from '../services/userService';
 import ReverseCalculator from '../components/ReverseCalculator';
@@ -16,6 +16,9 @@ export default function AdminModule() {
   // Editar Usuário State
   const [editingUser, setEditingUser] = useState(null);
   const [editForm, setEditForm] = useState({ nome: '', cargo: 'SDR', status: 'Ativo', senha: '' });
+
+  // Sidebar State
+  const [isAdminCollapsed, setIsAdminCollapsed] = useState(false);
 
   // Integrações State
   const [activeCrmModal, setActiveCrmModal] = useState(null);
@@ -172,32 +175,53 @@ export default function AdminModule() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col" translate="no">
       <div className="flex flex-1 overflow-hidden">
-        <aside className="w-64 border-r border-white/10 bg-[#101010] flex flex-col shrink-0 p-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-4 px-3">Gestão Master</p>
+        <aside className={`${isAdminCollapsed ? 'w-20' : 'w-64'} border-r border-white/10 bg-[#101010] flex flex-col shrink-0 p-4 relative transition-all duration-300 select-none`}>
+          {/* Botão de Recolher no Centro da Borda */}
+          <button
+            type="button"
+            onClick={() => setIsAdminCollapsed(!isAdminCollapsed)}
+            className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[#1a1a1a] hover:bg-red-600 border border-white/20 hover:border-red-600 rounded-full flex items-center justify-center text-white/80 hover:text-white shadow-xl cursor-pointer z-40 transition-all hover:scale-110 focus:outline-none"
+            title={isAdminCollapsed ? "Expandir menu de Gestão" : "Recolher menu de Gestão"}
+          >
+            {isAdminCollapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
+          </button>
+
+          {!isAdminCollapsed && (
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-4 px-3 animate-in fade-in">
+              Gestão Master
+            </p>
+          )}
+
           <div className="space-y-2">
             <button 
               onClick={() => setActiveTab('usuarios')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-colors ${
+              title={isAdminCollapsed ? "Usuários e Acessos" : undefined}
+              className={`w-full flex items-center ${isAdminCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} rounded-xl font-medium text-sm transition-colors ${
                 activeTab === 'usuarios' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'text-white/50 hover:bg-white/5 hover:text-white'
               }`}
             >
-              <Users size={18} /> Usuários e Acessos
+              <Users size={18} className="shrink-0" />
+              {!isAdminCollapsed && <span className="whitespace-nowrap animate-in fade-in">Usuários e Acessos</span>}
             </button>
             <button 
               onClick={() => setActiveTab('integracoes')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-colors ${
+              title={isAdminCollapsed ? "Integrações (CRM)" : undefined}
+              className={`w-full flex items-center ${isAdminCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} rounded-xl font-medium text-sm transition-colors ${
                 activeTab === 'integracoes' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'text-white/50 hover:bg-white/5 hover:text-white'
               }`}
             >
-              <Settings size={18} /> Integrações (CRM)
+              <Settings size={18} className="shrink-0" />
+              {!isAdminCollapsed && <span className="whitespace-nowrap animate-in fade-in">Integrações (CRM)</span>}
             </button>
             <button 
               onClick={() => setActiveTab('metas')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-colors ${
+              title={isAdminCollapsed ? "Engenharia de Metas" : undefined}
+              className={`w-full flex items-center ${isAdminCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} rounded-xl font-medium text-sm transition-colors ${
                 activeTab === 'metas' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'text-white/50 hover:bg-white/5 hover:text-white'
               }`}
             >
-              <Calculator size={18} /> Engenharia de Metas
+              <Calculator size={18} className="shrink-0" />
+              {!isAdminCollapsed && <span className="whitespace-nowrap animate-in fade-in">Engenharia de Metas</span>}
             </button>
           </div>
         </aside>

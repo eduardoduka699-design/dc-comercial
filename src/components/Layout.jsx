@@ -10,13 +10,30 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  PanelLeftClose,
   User
 } from 'lucide-react';
 
 export default function Layout({ children, userRole, onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('dc-sidebar-collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleCollapse = () => {
+    setIsCollapsed(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('dc-sidebar-collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  };
 
   const isAdmin = userRole === 'Admin Supremo' || userRole?.includes('Gestor');
 
@@ -33,13 +50,27 @@ export default function Layout({ children, userRole, onLogout }) {
       
       {/* Sidebar Lateral */}
       <aside 
-        className={`${isCollapsed ? 'w-20' : 'w-64'} bg-[#101010] border-r border-white/5 flex flex-col shrink-0 relative z-20 transition-all duration-300`}
+        className={`${isCollapsed ? 'w-20' : 'w-64'} bg-[#101010] border-r border-white/5 flex flex-col shrink-0 relative z-30 transition-all duration-300 select-none`}
       >
+        {/* Botão de Recolher/Expandir no CENTRO da borda lateral */}
+        <button
+          type="button"
+          onClick={toggleCollapse}
+          aria-label={isCollapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
+          title={isCollapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
+          className="absolute -right-3.5 top-1/2 -translate-y-1/2 w-7 h-7 bg-[#1c1c1c] hover:bg-brand-blue border border-white/20 hover:border-brand-blue rounded-full flex items-center justify-center text-white/80 hover:text-white shadow-2xl cursor-pointer z-50 transition-all duration-200 hover:scale-110 active:scale-95 focus:outline-none"
+        >
+          {isCollapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+        </button>
         
         {/* Header Logo */}
-        <div className={`h-20 flex items-center border-b border-white/5 ${isCollapsed ? 'justify-center px-0' : 'px-6'}`}>
+        <div className={`h-20 flex items-center border-b border-white/5 ${isCollapsed ? 'justify-center px-0' : 'justify-between px-6'}`}>
           <div className="flex items-center gap-3 overflow-hidden whitespace-nowrap">
-            <div className="w-10 h-10 bg-brand-blue rounded-xl flex items-center justify-center shadow-lg shadow-brand-blue/20 shrink-0">
+            <div 
+              onClick={() => isCollapsed && toggleCollapse()}
+              className={`w-10 h-10 bg-brand-blue rounded-xl flex items-center justify-center shadow-lg shadow-brand-blue/20 shrink-0 ${isCollapsed ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
+              title={isCollapsed ? "Clique para expandir o menu" : undefined}
+            >
               <span className="font-bold text-white text-lg tracking-tighter" translate="no">DC</span>
             </div>
             {!isCollapsed && (
@@ -49,6 +80,17 @@ export default function Layout({ children, userRole, onLogout }) {
               </div>
             )}
           </div>
+
+          {!isCollapsed && (
+            <button
+              type="button"
+              onClick={toggleCollapse}
+              className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-colors"
+              title="Recolher menu lateral"
+            >
+              <PanelLeftClose size={18} />
+            </button>
+          )}
         </div>
 
         {/* Menu Navigation */}
@@ -120,14 +162,19 @@ export default function Layout({ children, userRole, onLogout }) {
             {!isCollapsed && <span className="whitespace-nowrap animate-in fade-in">Sair do Sistema</span>}
           </button>
           
+          {/* Botão de Rodapé para Recolher/Expandir */}
           <button 
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className={`w-full flex items-center rounded-xl text-sm font-medium text-white/30 hover:bg-white/5 hover:text-white transition-colors ${
-              isCollapsed ? 'justify-center p-2.5' : 'justify-center py-2.5 gap-2'
+            type="button"
+            onClick={toggleCollapse}
+            title={isCollapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
+            className={`w-full flex items-center rounded-xl text-sm font-medium transition-colors ${
+              isCollapsed 
+                ? 'justify-center p-2.5 text-white/60 hover:text-white hover:bg-white/10' 
+                : 'justify-center py-2.5 gap-2 text-white/70 hover:text-white bg-white/5 hover:bg-white/10 border border-white/5'
             }`}
           >
-            {isCollapsed ? <ChevronRight size={16} className="shrink-0" /> : <ChevronLeft size={16} className="shrink-0" />}
-            {!isCollapsed && <span className="whitespace-nowrap animate-in fade-in text-xs uppercase tracking-widest font-bold">Recolher</span>}
+            {isCollapsed ? <ChevronRight size={16} className="shrink-0 text-brand-blue" /> : <ChevronLeft size={16} className="shrink-0" />}
+            {!isCollapsed && <span className="whitespace-nowrap text-xs uppercase tracking-widest font-bold">Recolher Menu</span>}
           </button>
         </div>
       </aside>
