@@ -221,7 +221,18 @@ export default function Login({ onLogin }) {
           </div>
 
           {error && (
-            <p className="text-xs text-red-500 font-medium text-center animate-in fade-in">{error}</p>
+            <div className="space-y-1 text-center animate-in fade-in">
+              <p className="text-xs text-red-500 font-medium">{error}</p>
+              {!isRegistering && !isResetting && (
+                <button
+                  type="button"
+                  onClick={() => { setIsRegistering(true); setError(''); }}
+                  className="text-xs text-brand-blue hover:underline font-bold inline-block mt-1"
+                >
+                  Novo colaborador neste aparelho? Clique aqui para criar conta
+                </button>
+              )}
+            </div>
           )}
 
           <button 
