@@ -14,7 +14,7 @@ import {
   User
 } from 'lucide-react';
 
-export default function Layout({ children, userRole, onLogout }) {
+export default function Layout({ children, userRole, currentUser, onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -76,7 +76,9 @@ export default function Layout({ children, userRole, onLogout }) {
             {!isCollapsed && (
               <div className="flex flex-col justify-center animate-in fade-in">
                 <h1 className="font-bold text-lg leading-none tracking-tight text-white" translate="no">DashClient</h1>
-                <span className="text-[9px] tracking-[0.2em] text-white/50 font-bold uppercase mt-1 leading-none" translate="no">Gabriel Vidal</span>
+                <span className="text-[9px] tracking-[0.2em] text-white/50 font-bold uppercase mt-1 leading-none truncate max-w-[130px]" translate="no">
+                  {currentUser?.nome || 'Gabriel Vidal'}
+                </span>
               </div>
             )}
           </div>
@@ -144,9 +146,13 @@ export default function Layout({ children, userRole, onLogout }) {
               <User size={14} />
             </div>
             {!isCollapsed && (
-              <div className="animate-in fade-in">
-                <p className="text-xs font-bold text-white leading-tight">Minha Conta</p>
-                <p className="text-[10px] text-white/40 truncate w-32" translate="no">{userRole}</p>
+              <div className="animate-in fade-in overflow-hidden">
+                <p className="text-xs font-bold text-white leading-tight truncate w-32" title={currentUser?.nome || 'Minha Conta'}>
+                  {currentUser?.nome || 'Minha Conta'}
+                </p>
+                <p className="text-[10px] text-white/40 truncate w-32" translate="no">
+                  {currentUser?.cargo || userRole}
+                </p>
               </div>
             )}
           </div>

@@ -86,6 +86,9 @@ export const userService = {
   saveLocalUsers(users) {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(users));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('dc-users-updated', { detail: users }));
+      }
     } catch (e) {
       console.error('Erro ao salvar usuários no localStorage:', e);
     }

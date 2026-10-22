@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ShieldAlert, Users, UserPlus, Key, Trash2, Edit3, Loader2, Link2, Settings, CheckCircle2, Zap, Calculator, Copy, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, Users, UserPlus, Key, Trash2, Edit3, Loader2, Link2, Settings, CheckCircle2, Zap, Calculator, Copy, Check, ChevronLeft, ChevronRight, Activity, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { userService } from '../services/userService';
 import ReverseCalculator from '../components/ReverseCalculator';
@@ -33,6 +33,30 @@ export default function AdminModule() {
       setTimeout(() => setCopiedWebhook(false), 2500);
     } catch {
       alert('URL copiada: ' + webhookUrl);
+    }
+  };
+
+  const [testingWebhook, setTestingWebhook] = useState(false);
+  const [webhookStatus, setWebhookStatus] = useState(null);
+
+  const handleTestWebhook = async () => {
+    setTestingWebhook(true);
+    setWebhookStatus(null);
+    try {
+      const res = await fetch('https://dc-comercial.vercel.app/api/webhook/legendary');
+      const data = await res.json();
+      if (res.ok && data.status === 'online') {
+        setWebhookStatus({ 
+          ok: true, 
+          msg: `Online! Endpoint ativo (${data.recentCount || 0} leads processados). Pronto para uso.` 
+        });
+      } else {
+        setWebhookStatus({ ok: false, msg: 'Resposta inesperada do endpoint.' });
+      }
+    } catch (err) {
+      setWebhookStatus({ ok: false, msg: 'Erro ao conectar: ' + err.message });
+    } finally {
+      setTestingWebhook(false);
     }
   };
 
@@ -584,6 +608,25 @@ export default function AdminModule() {
                     {copiedWebhook ? <Check size={14} /> : <Copy size={14} />}
                     {copiedWebhook ? 'Copiado!' : 'Copiar'}
                   </button>
+                </div>
+
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={handleTestWebhook}
+                    disabled={testingWebhook}
+                    className="w-full py-2 px-3 bg-brand-blue/15 hover:bg-brand-blue/25 text-brand-blue border border-brand-blue/30 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {testingWebhook ? <Loader2 size={14} className="animate-spin" /> : <Activity size={14} />}
+                    {testingWebhook ? 'Testando conexão...' : 'Verificar Status do Webhook'}
+                  </button>
+
+                  {webhookStatus && (
+                    <div className={`mt-2 p-2.5 rounded-lg text-xs font-semibold flex items-center gap-2 ${webhookStatus.ok ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                      {webhookStatus.ok ? <CheckCircle2 size={14} className="shrink-0" /> : <AlertCircle size={14} className="shrink-0" />}
+                      <span>{webhookStatus.msg}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

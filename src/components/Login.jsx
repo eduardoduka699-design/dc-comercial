@@ -61,8 +61,8 @@ export default function Login({ onLogin }) {
           return;
         }
 
-        // Login automático com o cargo cadastrado
-        onLogin(finalCargo);
+        // Login automático com o usuário cadastrado
+        onLogin(res.data || { nome, usuario: username, cargo: finalCargo });
         
       } else {
         // Fluxo de Login
@@ -74,7 +74,7 @@ export default function Login({ onLogin }) {
           return;
         }
 
-        onLogin(res.user.cargo);
+        onLogin(res.user);
       }
     } catch (err) {
       console.error('Erro no fluxo de login:', err);
@@ -114,7 +114,7 @@ export default function Login({ onLogin }) {
             </div>
             <div className="flex flex-col justify-center text-left">
               <h1 className="font-bold text-3xl leading-none tracking-tight text-white">DashClient</h1>
-              <span className="text-[10px] tracking-[0.25em] text-white/50 font-bold uppercase mt-1 leading-none">Gabriel Vidal</span>
+              <span className="text-[10px] tracking-[0.25em] text-white/50 font-bold uppercase mt-1 leading-none">Comercial & Gestão</span>
             </div>
           </div>
         </div>

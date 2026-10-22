@@ -18,6 +18,21 @@ function App() {
     }
   });
 
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dc-leiseca-user-v2');
+      if (saved) return JSON.parse(saved);
+      const role = localStorage.getItem('dc-leiseca-role-v2') || 'Admin Supremo';
+      return {
+        nome: role === 'Admin Supremo' ? 'Gabriel Vidal' : 'Colaborador',
+        cargo: role,
+        usuario: 'admin'
+      };
+    } catch {
+      return { nome: 'Gabriel Vidal', cargo: 'Admin Supremo', usuario: 'admin' };
+    }
+  });
+
   const [userRole, setUserRole] = useState(() => {
     try {
       return localStorage.getItem('dc-leiseca-role-v2') || 'Admin Supremo';
@@ -26,13 +41,22 @@ function App() {
     }
   });
 
-  const handleLogin = (cargo) => {
-    const role = cargo || 'Admin Supremo';
+  const handleLogin = (user) => {
+    const role = typeof user === 'string' ? user : (user?.cargo || 'Admin Supremo');
+    const userData = (typeof user === 'object' && user !== null) ? user : {
+      nome: role === 'Admin Supremo' ? 'Gabriel Vidal' : 'Colaborador',
+      cargo: role,
+      usuario: 'admin'
+    };
+
     setIsAuthenticated(true);
     setUserRole(role);
+    setCurrentUser(userData);
+
     try {
       localStorage.setItem('dc-leiseca-auth-v2', 'true');
       localStorage.setItem('dc-leiseca-role-v2', role);
+      localStorage.setItem('dc-leiseca-user-v2', JSON.stringify(userData));
     } catch (e) {
       console.error(e);
     }
@@ -41,9 +65,11 @@ function App() {
   const handleLogout = () => {
     setIsAuthenticated(false);
     setUserRole('');
+    setCurrentUser(null);
     try {
       localStorage.removeItem('dc-leiseca-auth-v2');
       localStorage.removeItem('dc-leiseca-role-v2');
+      localStorage.removeItem('dc-leiseca-user-v2');
     } catch (e) {
       console.error(e);
     }
@@ -54,10 +80,10 @@ function App() {
       {!isAuthenticated ? (
         <Login onLogin={handleLogin} />
       ) : (
-        <Layout userRole={userRole} onLogout={handleLogout}>
+        <Layout userRole={userRole} currentUser={currentUser} onLogout={handleLogout}>
           <Routes>
             <Route path="/" element={<Navigate to="/comercial" replace />} />
-            <Route path="/comercial" element={<ComercialModule />} />
+            <Route path="/comercial" element={<ComercialModule currentUser={currentUser} />} />
             <Route path="/processual" element={<ProcessualModule />} />
             <Route path="/rh" element={<RHModule />} />
             <Route path="/marketing" element={<MarketingModule />} />

@@ -9,9 +9,9 @@ import Projection from '../components/Projection';
 import Ranking from '../components/Ranking';
 import ReverseCalculator from '../components/ReverseCalculator';
 import DatePicker from '../components/DatePicker';
-import { defaultGoals, baseMetrics, sdrChartData, bdrChartData, closerChartData } from '../data/mockData';
+import { defaultGoals, baseMetrics } from '../data/mockData';
 
-export default function ComercialModule() {
+export default function ComercialModule({ currentUser }) {
   const navigate = useNavigate();
   const [activeMenu, setActiveMenu] = useState('dashboard');
   const [activeTab, setActiveTab] = useState('sdr');
@@ -117,6 +117,81 @@ export default function ComercialModule() {
     });
     return newMetrics;
   };
+
+  const getDynamicChartData = () => {
+    if (activeTab === 'closer') {
+      const wonTotal = filteredMetrics.contratosFechados || 0;
+      const sentTotal = filteredMetrics.contratosEnviados || 0;
+      const lostTotal = Math.max(0, sentTotal - wonTotal);
+      
+      const w1_won = Math.floor(wonTotal * 0.2);
+      const w2_won = Math.floor(wonTotal * 0.3);
+      const w3_won = Math.floor(wonTotal * 0.3);
+      const w4_won = Math.max(0, wonTotal - (w1_won + w2_won + w3_won));
+
+      const w1_lost = Math.floor(lostTotal * 0.25);
+      const w2_lost = Math.floor(lostTotal * 0.25);
+      const w3_lost = Math.floor(lostTotal * 0.25);
+      const w4_lost = Math.max(0, lostTotal - (w1_lost + w2_lost + w3_lost));
+
+      return [
+        { name: 'Semana 1', won: w1_won, lost: w1_lost },
+        { name: 'Semana 2', won: w2_won, lost: w2_lost },
+        { name: 'Semana 3', won: w3_won, lost: w3_lost },
+        { name: 'Semana 4', won: w4_won, lost: w4_lost }
+      ];
+    } else if (activeTab === 'sdr') {
+      const leadsTotal = filteredMetrics.leadsRecebidos || 0;
+      const sqlsTotal = filteredMetrics.casosQualificados || 0;
+
+      const w1_leads = Math.floor(leadsTotal * 0.22);
+      const w2_leads = Math.floor(leadsTotal * 0.28);
+      const w3_leads = Math.floor(leadsTotal * 0.26);
+      const w4_leads = Math.max(0, leadsTotal - (w1_leads + w2_leads + w3_leads));
+
+      const w1_sqls = Math.floor(sqlsTotal * 0.2);
+      const w2_sqls = Math.floor(sqlsTotal * 0.3);
+      const w3_sqls = Math.floor(sqlsTotal * 0.25);
+      const w4_sqls = Math.max(0, sqlsTotal - (w1_sqls + w2_sqls + w3_sqls));
+
+      return [
+        { name: 'Semana 1', leads: w1_leads, sqls: w1_sqls },
+        { name: 'Semana 2', leads: w2_leads, sqls: w2_sqls },
+        { name: 'Semana 3', leads: w3_leads, sqls: w3_sqls },
+        { name: 'Semana 4', leads: w4_leads, sqls: w4_sqls }
+      ];
+    } else {
+      const outreachTotal = filteredMetrics.processosMapeados || 0;
+      const meetingsTotal = filteredMetrics.consultasAgendadasOut || 0;
+
+      const w1_o = Math.floor(outreachTotal * 0.24);
+      const w2_o = Math.floor(outreachTotal * 0.27);
+      const w3_o = Math.floor(outreachTotal * 0.25);
+      const w4_o = Math.max(0, outreachTotal - (w1_o + w2_o + w3_o));
+
+      const w1_m = Math.floor(meetingsTotal * 0.2);
+      const w2_m = Math.floor(meetingsTotal * 0.3);
+      const w3_m = Math.floor(meetingsTotal * 0.25);
+      const w4_m = Math.max(0, meetingsTotal - (w1_m + w2_m + w3_m));
+
+      return [
+        { name: 'Semana 1', outreach: w1_o, meetings: w1_m },
+        { name: 'Semana 2', outreach: w2_o, meetings: w2_m },
+        { name: 'Semana 3', outreach: w3_o, meetings: w3_m },
+        { name: 'Semana 4', outreach: w4_o, meetings: w4_m }
+      ];
+    }
+  };
+
+  const currentHour = new Date().getHours();
+  const greeting = currentHour < 12 ? 'Bom dia' : currentHour < 18 ? 'Boa tarde' : 'Boa noite';
+  const resolvedUser = currentUser || (() => {
+    try {
+      const s = localStorage.getItem('dc-leiseca-user-v2');
+      return s ? JSON.parse(s) : null;
+    } catch { return null; }
+  })();
+  const userFirstName = resolvedUser?.nome ? resolvedUser.nome.split(' ')[0] : 'Equipe';
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -227,7 +302,7 @@ export default function ComercialModule() {
             {/* Page Header */}
             <div className="flex justify-between items-end mb-8">
               <div>
-                <h2 className="text-3xl font-bold mb-1">Boa tarde, Equipe.</h2>
+                <h2 className="text-3xl font-bold mb-1">{greeting}, {userFirstName}.</h2>
                 <p className={`text-sm ${isDarkMode ? 'text-white/50' : 'text-gray-500'}`}>
                   Visão executiva e controle do setor comercial {customDate ? (
                     <span className="text-brand-blue font-bold ml-1">
@@ -273,7 +348,7 @@ export default function ComercialModule() {
             {/* Dynamic Content based on activeMenu */}
             {activeMenu === 'dashboard' && (
               <div className="space-y-12">
-                <Dashboard role={activeTab} metrics={filteredMetrics} goals={goals[activeTab]} chartData={activeTab === 'closer' ? closerChartData : activeTab === 'sdr' ? sdrChartData : bdrChartData} />
+                <Dashboard role={activeTab} metrics={filteredMetrics} goals={goals[activeTab]} chartData={getDynamicChartData()} />
                 <Projection role={activeTab} metrics={filteredMetrics} goals={goals[activeTab]} />
               </div>
             )}

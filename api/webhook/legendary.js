@@ -5,6 +5,10 @@ const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_-0ZXSL
 
 const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
 
+if (!globalThis.__recentLeads) {
+  globalThis.__recentLeads = [];
+}
+
 export default async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -19,13 +23,15 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // GET: Health Check e instruções
+  // GET: Health Check e lista de leads recebidos em tempo real
   if (req.method === 'GET') {
     return res.status(200).json({
       status: 'online',
       service: 'DC Comercial - Webhook Legendary Hub II',
       timestamp: new Date().toISOString(),
-      endpoint: 'https://dc-comercial.vercel.app/api/webhook/legendary'
+      endpoint: 'https://dc-comercial.vercel.app/api/webhook/legendary',
+      recentCount: globalThis.__recentLeads ? globalThis.__recentLeads.length : 0,
+      recentLeads: globalThis.__recentLeads || []
     });
   }
 
@@ -84,6 +90,11 @@ export default async function handler(req, res) {
       valor_honorarios: valor,
       atualizado_em: receivedAt
     };
+
+    // Salva no cache em memória para consulta instantânea
+    if (!globalThis.__recentLeads) globalThis.__recentLeads = [];
+    globalThis.__recentLeads.unshift(processedLead);
+    if (globalThis.__recentLeads.length > 50) globalThis.__recentLeads.pop();
 
     // Salva o evento e o lead no Supabase se disponível
     let persisted = false;
