@@ -332,13 +332,13 @@ export default function MarketingModule() {
         <div className="mb-8 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 bg-[#f59e0b]/15 text-[#f59e0b] rounded-xl border border-[#f59e0b]/30">
+              <div className="p-2.5 bg-brand-blue/15 text-brand-blue rounded-xl border border-brand-blue/30">
                 <FileSpreadsheet size={24} />
               </div>
               <h1 className="text-3xl font-display font-black tracking-tight text-white">
                 Assessoria — Tráfego Pago
               </h1>
-              <span className="text-xs px-3 py-1 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/30 text-[#f59e0b] font-bold">
+              <span className="text-xs px-3 py-1 rounded-full bg-brand-blue/10 border border-brand-blue/30 text-brand-blue font-bold">
                 Consolidado Mensal
               </span>
             </div>
@@ -355,7 +355,7 @@ export default function MarketingModule() {
                 onClick={() => setActiveView('tabela')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                   activeView === 'tabela' 
-                    ? 'bg-[#f59e0b] text-black shadow-md' 
+                    ? 'bg-brand-blue text-white shadow-md' 
                     : 'text-white/60 hover:text-white'
                 }`}
               >
@@ -397,7 +397,7 @@ export default function MarketingModule() {
             <button
               type="button"
               onClick={handleAddRow}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-black bg-[#f59e0b] hover:bg-[#eab308] shadow-lg shadow-[#f59e0b]/20 transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-blue hover:bg-blue-600 shadow-lg shadow-brand-blue/20 transition-all"
             >
               <Plus size={16} />
               Adicionar Mês
@@ -408,7 +408,7 @@ export default function MarketingModule() {
         {/* Top Executive KPI Cards (Consolidado Geral) */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
           
-          <div className="bg-[#151515] p-4 rounded-2xl border border-white/10 flex flex-col justify-between hover:border-[#f59e0b]/40 transition-colors">
+          <div className="bg-[#151515] p-4 rounded-2xl border border-white/10 flex flex-col justify-between hover:border-brand-blue/40 transition-colors">
             <span className="text-[10px] uppercase font-bold tracking-widest text-white/40">Total Investido</span>
             <div className="my-2">
               <span className="text-xl md:text-2xl font-bold text-white tracking-tight">
@@ -458,10 +458,10 @@ export default function MarketingModule() {
             <span className="text-[10px] text-white/50">Taxa venda: {taxaVendaGeral.toFixed(1)}%</span>
           </div>
 
-          <div className="bg-[#151515] p-4 rounded-2xl border border-white/10 flex flex-col justify-between hover:border-amber-500/40 transition-colors">
+          <div className="bg-[#151515] p-4 rounded-2xl border border-white/10 flex flex-col justify-between hover:border-indigo-500/40 transition-colors">
             <span className="text-[10px] uppercase font-bold tracking-widest text-white/40">CAC Médio</span>
             <div className="my-2">
-              <span className="text-xl md:text-2xl font-bold text-amber-400 tracking-tight">
+              <span className="text-xl md:text-2xl font-bold text-indigo-400 tracking-tight">
                 {formatBRL(cacMedioGeral)}
               </span>
             </div>
@@ -486,8 +486,8 @@ export default function MarketingModule() {
         {activeView === 'tabela' && (
           <div className="bg-[#151515] border border-white/10 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in duration-300">
             
-            {/* Banner Laranja do Cabeçalho da Planilha */}
-            <div className="bg-[#f59e0b] px-6 py-3 text-black font-black text-center text-sm md:text-base tracking-wider uppercase shadow-inner flex items-center justify-center gap-2">
+            {/* Banner Superior da Planilha */}
+            <div className="bg-gradient-to-r from-brand-blue via-blue-600 to-indigo-600 px-6 py-3 text-white font-black text-center text-sm md:text-base tracking-wider uppercase shadow-inner flex items-center justify-center gap-2">
               <FileSpreadsheet size={18} />
               Assessoria — Tráfego Pago
             </div>
@@ -495,22 +495,22 @@ export default function MarketingModule() {
             <div className="overflow-x-auto">
               <table className="w-full text-center text-xs whitespace-nowrap border-collapse">
                 <thead>
-                  <tr className="bg-[#d97706] text-black font-extrabold uppercase text-[11px] divide-x divide-black/20">
+                  <tr className="bg-[#18181b] text-white/90 font-extrabold uppercase text-[11px] divide-x divide-white/10 border-b border-white/10">
                     <th className="py-3 px-3">Nº do Mês</th>
                     <th className="py-3 px-3">Mês</th>
-                    <th className="py-3 px-3 bg-[#b45309] text-white">Investimento</th>
+                    <th className="py-3 px-3 bg-brand-blue/20 text-brand-blue border-b-2 border-brand-blue">Investimento</th>
                     <th className="py-3 px-3">Leads Gerados</th>
-                    <th className="py-3 px-3 bg-[#b45309]/80 text-white">CPL</th>
+                    <th className="py-3 px-3 bg-purple-500/10 text-purple-300">CPL</th>
                     <th className="py-3 px-3">Reuniões marcadas</th>
                     <th className="py-3 px-3">Taxa de agendamento</th>
                     <th className="py-3 px-3">Reuniões realizadas</th>
                     <th className="py-3 px-3">Taxa de comparecimento</th>
                     <th className="py-3 px-3">Comparecimentos</th>
                     <th className="py-3 px-3">Taxa de venda</th>
-                    <th className="py-3 px-3 bg-[#10b981] text-white">Vendas</th>
+                    <th className="py-3 px-3 bg-[#10b981]/20 text-[#10b981]">Vendas</th>
                     <th className="py-3 px-3">CAC</th>
                     <th className="py-3 px-3">TKM</th>
-                    <th className="py-3 px-3 bg-[#10b981] text-white">Valor de Vendas</th>
+                    <th className="py-3 px-3 bg-[#10b981]/20 text-[#10b981]">Valor de Vendas</th>
                     <th className="py-3 px-3 bg-black text-[#10b981]">ROAS</th>
                     <th className="py-3 px-2 bg-black/60 text-white/70">Ações</th>
                   </tr>
@@ -535,7 +535,7 @@ export default function MarketingModule() {
                         <td className="py-3.5 px-3 font-medium text-white/80">{row.mes}</td>
 
                         {/* Investimento */}
-                        <td className="py-3.5 px-3 font-bold text-amber-300 bg-amber-500/5">
+                        <td className="py-3.5 px-3 font-bold text-blue-300 bg-blue-500/5">
                           {row.investimento > 0 ? formatBRL(row.investimento) : '-'}
                         </td>
 
@@ -575,7 +575,7 @@ export default function MarketingModule() {
                         </td>
 
                         {/* Taxa de venda */}
-                        <td className="py-3.5 px-3 font-bold text-yellow-300">
+                        <td className="py-3.5 px-3 font-bold text-emerald-400">
                           {row.taxaVenda !== null ? `${Math.round(row.taxaVenda)}%` : '-'}
                         </td>
 
@@ -585,7 +585,7 @@ export default function MarketingModule() {
                         </td>
 
                         {/* CAC */}
-                        <td className="py-3.5 px-3 font-medium text-orange-300">
+                        <td className="py-3.5 px-3 font-medium text-indigo-300">
                           {row.cac > 0 ? formatBRL(row.cac) : '-'}
                         </td>
 
@@ -632,11 +632,11 @@ export default function MarketingModule() {
 
                 {/* Rodapé Consolidado com Totais e Médias */}
                 <tfoot>
-                  <tr className="bg-gradient-to-r from-[#1a1a1a] via-[#202020] to-[#1a1a1a] border-t-2 border-[#f59e0b] font-bold text-white text-xs divide-x divide-white/5 shadow-2xl">
-                    <td className="py-4 px-3 text-[#f59e0b] font-black uppercase tracking-wider text-left pl-4" colSpan={2}>
+                  <tr className="bg-gradient-to-r from-[#18181b] via-[#202024] to-[#18181b] border-t-2 border-brand-blue font-bold text-white text-xs divide-x divide-white/5 shadow-2xl">
+                    <td className="py-4 px-3 text-brand-blue font-black uppercase tracking-wider text-left pl-4" colSpan={2}>
                       Total Consolidado
                     </td>
-                    <td className="py-4 px-3 text-amber-300 font-extrabold bg-amber-500/10">
+                    <td className="py-4 px-3 text-blue-300 font-extrabold bg-blue-500/10">
                       {formatBRL(totalInvestimento)}
                     </td>
                     <td className="py-4 px-3 text-brand-blue font-extrabold">
@@ -658,13 +658,13 @@ export default function MarketingModule() {
                       {taxaComparecimentoGeral > 0 ? `${taxaComparecimentoGeral.toFixed(2)}%` : '-'}
                     </td>
                     <td className="py-4 px-3 text-white/30">-</td>
-                    <td className="py-4 px-3 text-yellow-300">
+                    <td className="py-4 px-3 text-emerald-400 font-extrabold">
                       {taxaVendaGeral > 0 ? `${Math.round(taxaVendaGeral)}%` : '-'}
                     </td>
                     <td className="py-4 px-3 text-[#10b981] font-black bg-[#10b981]/20 text-sm">
                       {formatNum(totalVendas)}
                     </td>
-                    <td className="py-4 px-3 text-orange-300">
+                    <td className="py-4 px-3 text-indigo-300">
                       {formatBRL(cacMedioGeral)}
                     </td>
                     <td className="py-4 px-3 text-white/90">
@@ -687,8 +687,8 @@ export default function MarketingModule() {
                 💡 <strong>Dica:</strong> Clique no ícone de lápis para editar qualquer mês. O CPL, Taxas, CAC, Faturamento e ROAS são calculados automaticamente.
               </p>
               <div className="flex items-center gap-4">
-                <span className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></div> Investimento</span>
-                <span className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-brand-blue"></div> Leads</span>
+                <span className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-brand-blue"></div> Investimento</span>
+                <span className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-purple-400"></div> Leads / CPL</span>
                 <span className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></div> Faturamento / ROAS</span>
               </div>
             </div>
@@ -723,7 +723,7 @@ export default function MarketingModule() {
                         formatter={(val) => formatBRL(val)}
                       />
                       <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                      <Bar dataKey="investimento" name="Investimento (R$)" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="investimento" name="Investimento (R$)" fill="#0070f3" radius={[4, 4, 0, 0]} />
                       <Bar dataKey="faturamento" name="Faturamento Vendas (R$)" fill="#10b981" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -737,7 +737,7 @@ export default function MarketingModule() {
                     <h3 className="font-bold text-white text-base">Curva de Eficiência (ROAS & CPL)</h3>
                     <p className="text-xs text-white/40 mt-0.5">Retorno de investimento e custo por lead</p>
                   </div>
-                  <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-full border border-amber-400/30">
+                  <span className="text-xs font-bold text-purple-400 bg-purple-400/10 px-2.5 py-1 rounded-full border border-purple-400/30">
                     CPL Médio: {formatBRL(cplMedioGeral)}
                   </span>
                 </div>
@@ -778,7 +778,7 @@ export default function MarketingModule() {
           >
             <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-[#f59e0b]/15 text-[#f59e0b] rounded-xl border border-[#f59e0b]/30">
+                <div className="p-2.5 bg-brand-blue/15 text-brand-blue rounded-xl border border-brand-blue/30">
                   <Edit3 size={20} />
                 </div>
                 <div>
@@ -808,7 +808,7 @@ export default function MarketingModule() {
                     required
                     value={editingRow.num}
                     onChange={e => setEditingRow({ ...editingRow, num: e.target.value })}
-                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#f59e0b]"
+                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-brand-blue"
                     placeholder="Ex: 1º Mês"
                   />
                 </div>
@@ -822,14 +822,14 @@ export default function MarketingModule() {
                     required
                     value={editingRow.mes}
                     onChange={e => setEditingRow({ ...editingRow, mes: e.target.value })}
-                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#f59e0b]"
+                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-brand-blue"
                     placeholder="Ex: julho/2026"
                   />
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-3">
-                <p className="text-xs font-bold text-amber-400 uppercase tracking-wider">Tráfego & Leads</p>
+              <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/20 space-y-3">
+                <p className="text-xs font-bold text-brand-blue uppercase tracking-wider">Tráfego & Leads</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-[11px] font-bold text-white/60 uppercase tracking-wider mb-1.5 block">
@@ -841,7 +841,7 @@ export default function MarketingModule() {
                       min="0"
                       value={editingRow.investimento}
                       onChange={e => setEditingRow({ ...editingRow, investimento: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-amber-300 font-bold focus:outline-none focus:border-amber-400 text-base"
+                      className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-blue-300 font-bold focus:outline-none focus:border-brand-blue text-base"
                     />
                   </div>
 
@@ -947,7 +947,7 @@ export default function MarketingModule() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-[#f59e0b] hover:bg-[#eab308] text-black font-extrabold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-[#f59e0b]/20"
+                  className="flex-1 bg-brand-blue hover:bg-blue-600 text-white font-extrabold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-brand-blue/20"
                 >
                   <Check size={18} /> Salvar Alterações
                 </button>
