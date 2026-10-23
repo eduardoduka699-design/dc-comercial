@@ -4,7 +4,6 @@ import {
   TrendingUp, 
   Users, 
   DollarSign, 
-  Plus, 
   Trash2, 
   Edit3, 
   Check, 
@@ -30,6 +29,7 @@ import {
   Tooltip, 
   Legend 
 } from 'recharts';
+import DatePicker from '../components/DatePicker';
 
 // Dados históricos fiéis ao modelo da planilha de Assessoria - Tráfego Pago
 const INITIAL_PLANILHA = [
@@ -129,6 +129,7 @@ export default function MarketingModule() {
 
   const [editingRow, setEditingRow] = useState(null);
   const [activeView, setActiveView] = useState('tabela'); // 'tabela' ou 'graficos'
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState('');
 
   useEffect(() => {
     try {
@@ -199,8 +200,50 @@ export default function MarketingModule() {
 
   const rowsCalculadas = planilha.map(calculateRow);
 
-  // Totais e Médias Consolidadas
-  const mesesComDados = rowsCalculadas.filter(r => r.investimento > 0 || r.leads > 0 || r.vendas > 0);
+  const monthNamesPt = [
+    'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+  ];
+
+  // Informações do mês e ano selecionados no calendário
+  const selectedMonthInfo = React.useMemo(() => {
+    if (!selectedCalendarDate) return null;
+    const parts = selectedCalendarDate.split('-');
+    if (parts.length < 3) return null;
+    const year = parts[0];
+    const monthIdx = parseInt(parts[1], 10) - 1;
+    const monthName = monthNamesPt[monthIdx] || '';
+    const day = parts[2];
+    return {
+      year,
+      monthName,
+      monthFormatted: `${monthName}/${year}`,
+      displayDate: `${day}/${parts[1]}/${year}`
+    };
+  }, [selectedCalendarDate]);
+
+  // Linhas filtradas pelo período selecionado no calendário
+  const displayedRows = React.useMemo(() => {
+    if (!selectedMonthInfo) return rowsCalculadas;
+    const filtered = rowsCalculadas.filter(r => {
+      const mesLower = (r.mes || '').toLowerCase();
+      return mesLower.includes(selectedMonthInfo.monthName);
+    });
+    return filtered.length > 0 ? filtered : rowsCalculadas;
+  }, [rowsCalculadas, selectedMonthInfo]);
+
+  // Linhas ativas para o cálculo dos KPIs do topo
+  const activeMetricsRows = React.useMemo(() => {
+    if (!selectedMonthInfo) return rowsCalculadas;
+    const matching = rowsCalculadas.filter(r => {
+      const mesLower = (r.mes || '').toLowerCase();
+      return mesLower.includes(selectedMonthInfo.monthName);
+    });
+    return matching.length > 0 ? matching : rowsCalculadas;
+  }, [rowsCalculadas, selectedMonthInfo]);
+
+  // Totais e Médias Consolidadas (dinâmicos para o período filtrado)
+  const mesesComDados = activeMetricsRows.filter(r => r.investimento > 0 || r.leads > 0 || r.vendas > 0);
   const totalInvestimento = mesesComDados.reduce((acc, r) => acc + r.investimento, 0);
   const totalLeads = mesesComDados.reduce((acc, r) => acc + r.leads, 0);
   const totalReunioesMarcadas = mesesComDados.reduce((acc, r) => acc + r.reunioesMarcadas, 0);
@@ -312,7 +355,7 @@ export default function MarketingModule() {
   };
 
   // Dados para os gráficos
-  const chartData = rowsCalculadas
+  const chartData = activeMetricsRows
     .filter(r => r.investimento > 0 || r.valorVendas > 0)
     .map(r => ({
       name: r.mes.split('/')[0],
@@ -394,16 +437,49 @@ export default function MarketingModule() {
               Restaurar
             </button>
 
-            <button
-              type="button"
-              onClick={handleAddRow}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-blue hover:bg-blue-600 shadow-lg shadow-brand-blue/20 transition-all"
-            >
-              <Plus size={16} />
-              Adicionar Mês
-            </button>
+            {/* Calendário de Seleção e Filtro de Mês/Data */}
+            <div className="flex items-center bg-[#151515] px-2.5 py-1 rounded-xl border border-white/10 shadow-sm hover:border-brand-blue/40 transition-colors">
+              <DatePicker 
+                selectedDate={selectedCalendarDate}
+                onSelectDate={(dateStr) => setSelectedCalendarDate(dateStr)}
+                onClear={() => setSelectedCalendarDate('')}
+                isDarkMode={true}
+              />
+            </div>
           </div>
         </div>
+
+        {/* Banner Informativo do Filtro de Calendário */}
+        {selectedMonthInfo && (
+          <div className="mb-6 p-4 rounded-2xl bg-brand-blue/10 border border-brand-blue/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs animate-in fade-in duration-300">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-brand-blue flex items-center justify-center text-white shrink-0 shadow-lg shadow-brand-blue/30">
+                <Calendar size={18} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-white/60">Período Selecionado no Calendário:</span>
+                  <span className="font-extrabold text-white uppercase tracking-wider bg-brand-blue/20 px-2.5 py-0.5 rounded text-[11px] border border-brand-blue/30">
+                    {selectedMonthInfo.monthFormatted}
+                  </span>
+                  <span className="text-brand-blue font-bold">({selectedMonthInfo.displayDate})</span>
+                </div>
+                <p className="text-[11px] text-white/50 mt-1">
+                  Exibindo métricas calculadas e lançamentos específicos de <strong className="text-white capitalize">{selectedMonthInfo.monthName}</strong>.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setSelectedCalendarDate('')}
+              className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-brand-blue hover:text-white font-bold transition-all border border-brand-blue/30 shrink-0 cursor-pointer flex items-center gap-1.5"
+            >
+              <RotateCcw size={13} />
+              Exibir Todos os Meses
+            </button>
+          </div>
+        )}
 
         {/* Top Executive KPI Cards (Consolidado Geral) */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
@@ -517,16 +593,21 @@ export default function MarketingModule() {
                 </thead>
 
                 <tbody className="divide-y divide-white/10">
-                  {rowsCalculadas.map((row, idx) => {
+                  {displayedRows.map((row, idx) => {
                     const hasData = row.investimento > 0 || row.leads > 0 || row.vendas > 0;
                     const isEven = idx % 2 === 0;
+                    const isSelectedMonth = selectedMonthInfo && (row.mes || '').toLowerCase().includes(selectedMonthInfo.monthName);
 
                     return (
                       <tr 
                         key={row.id} 
-                        className={`transition-colors hover:bg-white/10 group ${
-                          isEven ? 'bg-[#101010]' : 'bg-[#151515]'
-                        } ${!hasData ? 'opacity-40 hover:opacity-100' : ''}`}
+                        className={`transition-colors group ${
+                          isSelectedMonth 
+                            ? 'bg-brand-blue/15 hover:bg-brand-blue/20 ring-1 ring-brand-blue/40 shadow-md' 
+                            : isEven 
+                              ? 'bg-[#101010] hover:bg-white/10' 
+                              : 'bg-[#151515] hover:bg-white/10'
+                        } ${!hasData && !isSelectedMonth ? 'opacity-40 hover:opacity-100' : ''}`}
                       >
                         {/* Nº do Mês */}
                         <td className="py-3.5 px-3 font-bold text-white/90">{row.num}</td>
