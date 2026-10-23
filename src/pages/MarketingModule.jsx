@@ -29,7 +29,6 @@ import {
   Tooltip, 
   Legend 
 } from 'recharts';
-import DatePicker from '../components/DatePicker';
 
 // Dados históricos fiéis ao modelo da planilha de Assessoria - Tráfego Pago
 const INITIAL_PLANILHA = [
@@ -129,7 +128,7 @@ export default function MarketingModule() {
 
   const [editingRow, setEditingRow] = useState(null);
   const [activeView, setActiveView] = useState('tabela'); // 'tabela' ou 'graficos'
-  const [selectedCalendarDate, setSelectedCalendarDate] = useState('');
+  const [selectedYear, setSelectedYear] = useState('Todos');
 
   useEffect(() => {
     try {
@@ -200,47 +199,28 @@ export default function MarketingModule() {
 
   const rowsCalculadas = planilha.map(calculateRow);
 
-  const monthNamesPt = [
-    'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
-  ];
+  // Identifica dinamicamente os anos disponíveis na planilha
+  const availableYears = React.useMemo(() => {
+    const yearsSet = new Set();
+    planilha.forEach(r => {
+      const match = (r.mes || '').match(/\b(20\d{2})\b/);
+      if (match) yearsSet.add(match[1]);
+    });
+    if (yearsSet.size === 0) {
+      yearsSet.add('2026');
+      yearsSet.add('2027');
+    }
+    return Array.from(yearsSet).sort();
+  }, [planilha]);
 
-  // Informações do mês e ano selecionados no calendário
-  const selectedMonthInfo = React.useMemo(() => {
-    if (!selectedCalendarDate) return null;
-    const parts = selectedCalendarDate.split('-');
-    if (parts.length < 3) return null;
-    const year = parts[0];
-    const monthIdx = parseInt(parts[1], 10) - 1;
-    const monthName = monthNamesPt[monthIdx] || '';
-    const day = parts[2];
-    return {
-      year,
-      monthName,
-      monthFormatted: `${monthName}/${year}`,
-      displayDate: `${day}/${parts[1]}/${year}`
-    };
-  }, [selectedCalendarDate]);
-
-  // Linhas filtradas pelo período selecionado no calendário
+  // Linhas filtradas pelo Ano Selecionado (Fechamento Anual)
   const displayedRows = React.useMemo(() => {
-    if (!selectedMonthInfo) return rowsCalculadas;
-    const filtered = rowsCalculadas.filter(r => {
-      const mesLower = (r.mes || '').toLowerCase();
-      return mesLower.includes(selectedMonthInfo.monthName);
-    });
-    return filtered.length > 0 ? filtered : rowsCalculadas;
-  }, [rowsCalculadas, selectedMonthInfo]);
+    if (selectedYear === 'Todos') return rowsCalculadas;
+    return rowsCalculadas.filter(r => (r.mes || '').includes(selectedYear));
+  }, [rowsCalculadas, selectedYear]);
 
-  // Linhas ativas para o cálculo dos KPIs do topo
-  const activeMetricsRows = React.useMemo(() => {
-    if (!selectedMonthInfo) return rowsCalculadas;
-    const matching = rowsCalculadas.filter(r => {
-      const mesLower = (r.mes || '').toLowerCase();
-      return mesLower.includes(selectedMonthInfo.monthName);
-    });
-    return matching.length > 0 ? matching : rowsCalculadas;
-  }, [rowsCalculadas, selectedMonthInfo]);
+  // Linhas ativas para o cálculo dos KPIs do topo (consolidadas pelo ano)
+  const activeMetricsRows = displayedRows;
 
   // Totais e Médias Consolidadas (dinâmicos para o período filtrado)
   const mesesComDados = activeMetricsRows.filter(r => r.investimento > 0 || r.leads > 0 || r.vendas > 0);
@@ -371,115 +351,107 @@ export default function MarketingModule() {
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col" translate="no">
       <main className="flex-1 w-full max-w-[1600px] mx-auto p-6 md:p-8 overflow-y-auto">
         
-        {/* Cabeçalho da Página */}
-        <div className="mb-8 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 bg-brand-blue/15 text-brand-blue rounded-xl border border-brand-blue/30">
-                <FileSpreadsheet size={24} />
+        {/* Cabeçalho da Página com Toolbar Integrada */}
+        <div className="mb-8 flex flex-col xl:flex-row xl:items-center justify-between gap-5 bg-[#151515] p-5 rounded-2xl border border-white/10 shadow-lg">
+          {/* Lado Esquerdo: Título e Descrição */}
+          <div className="min-w-0">
+            <div className="flex items-center gap-3 mb-1.5 flex-wrap">
+              <div className="w-10 h-10 bg-brand-blue/15 text-brand-blue rounded-xl border border-brand-blue/30 flex items-center justify-center shrink-0 shadow-md shadow-brand-blue/10">
+                <FileSpreadsheet size={20} />
               </div>
-              <h1 className="text-3xl font-display font-black tracking-tight text-white">
+              <h1 className="text-2xl sm:text-3xl font-display font-black tracking-tight text-white truncate">
                 Assessoria — Tráfego Pago
               </h1>
-              <span className="text-xs px-3 py-1 rounded-full bg-brand-blue/10 border border-brand-blue/30 text-brand-blue font-bold">
-                Consolidado Mensal
+              <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-brand-blue/10 border border-brand-blue/30 text-brand-blue font-bold tracking-wide shrink-0">
+                {selectedYear === 'Todos' ? 'Todos os Anos' : `Exercício ${selectedYear}`}
               </span>
             </div>
-            <p className="text-white/50 text-sm max-w-2xl">
+            <p className="text-white/50 text-xs sm:text-sm max-w-2xl">
               Acompanhamento mês a mês de investimento, captação de leads, agendamentos, comparecimento, vendas e ROAS.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Seletor Tabela / Gráficos */}
-            <div className="flex bg-[#151515] p-1 rounded-xl border border-white/10 mr-2">
+          {/* Lado Direito: Toolbar Alinhada e Encaixada */}
+          <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+            
+            {/* Seletor Fechamento por Ano */}
+            <div className="flex items-center bg-[#0a0a0a] p-1 rounded-xl border border-white/10 shadow-inner">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-white/40 px-2 flex items-center gap-1.5 select-none">
+                <Calendar size={12} className="text-brand-blue" /> Ano
+              </span>
+              <div className="flex items-center gap-1">
+                {['Todos', ...availableYears].map(year => {
+                  const isYearActive = selectedYear === year;
+                  return (
+                    <button
+                      key={year}
+                      type="button"
+                      onClick={() => setSelectedYear(year)}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        isYearActive
+                          ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/30'
+                          : 'text-white/50 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      {year}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Alternador Visualização: Planilha / Gráficos */}
+            <div className="flex items-center bg-[#0a0a0a] p-1 rounded-xl border border-white/10 shadow-inner">
               <button
                 type="button"
                 onClick={() => setActiveView('tabela')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                   activeView === 'tabela' 
-                    ? 'bg-brand-blue text-white shadow-md' 
-                    : 'text-white/60 hover:text-white'
+                    ? 'bg-white/15 text-white shadow-sm' 
+                    : 'text-white/50 hover:text-white hover:bg-white/5'
                 }`}
               >
-                <FileSpreadsheet size={14} /> Planilha Completa
+                <FileSpreadsheet size={13} />
+                <span>Planilha</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveView('graficos')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                   activeView === 'graficos' 
-                    ? 'bg-brand-blue text-white shadow-md' 
-                    : 'text-white/60 hover:text-white'
+                    ? 'bg-white/15 text-white shadow-sm' 
+                    : 'text-white/50 hover:text-white hover:bg-white/5'
                 }`}
               >
-                <BarChart3 size={14} /> Gráficos de Evolução
+                <BarChart3 size={13} />
+                <span>Gráficos</span>
               </button>
             </div>
 
-            <button
-              type="button"
-              onClick={handleExportCSV}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-white/70 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
-              title="Baixar planilha em formato CSV"
-            >
-              <Download size={14} />
-              Exportar CSV
-            </button>
+            {/* Ações: Exportar e Restaurar */}
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={handleExportCSV}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-white/70 hover:text-white bg-[#0a0a0a] hover:bg-white/10 border border-white/10 transition-colors shadow-sm cursor-pointer"
+                title="Exportar planilha para CSV"
+              >
+                <Download size={13} />
+                <span>Exportar</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={handleResetDefaults}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-white/50 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
-              title="Restaurar dados de exemplo do print"
-            >
-              <RotateCcw size={14} />
-              Restaurar
-            </button>
-
-            {/* Calendário de Seleção e Filtro de Mês/Data */}
-            <div className="flex items-center bg-[#151515] px-2.5 py-1 rounded-xl border border-white/10 shadow-sm hover:border-brand-blue/40 transition-colors">
-              <DatePicker 
-                selectedDate={selectedCalendarDate}
-                onSelectDate={(dateStr) => setSelectedCalendarDate(dateStr)}
-                onClear={() => setSelectedCalendarDate('')}
-                isDarkMode={true}
-              />
+              <button
+                type="button"
+                onClick={handleResetDefaults}
+                className="p-2 rounded-xl text-xs text-white/40 hover:text-white bg-[#0a0a0a] hover:bg-white/10 border border-white/10 transition-colors shadow-sm cursor-pointer"
+                title="Restaurar dados de exemplo do print"
+              >
+                <RotateCcw size={14} />
+              </button>
             </div>
+
           </div>
         </div>
-
-        {/* Banner Informativo do Filtro de Calendário */}
-        {selectedMonthInfo && (
-          <div className="mb-6 p-4 rounded-2xl bg-brand-blue/10 border border-brand-blue/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs animate-in fade-in duration-300">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-brand-blue flex items-center justify-center text-white shrink-0 shadow-lg shadow-brand-blue/30">
-                <Calendar size={18} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-white/60">Período Selecionado no Calendário:</span>
-                  <span className="font-extrabold text-white uppercase tracking-wider bg-brand-blue/20 px-2.5 py-0.5 rounded text-[11px] border border-brand-blue/30">
-                    {selectedMonthInfo.monthFormatted}
-                  </span>
-                  <span className="text-brand-blue font-bold">({selectedMonthInfo.displayDate})</span>
-                </div>
-                <p className="text-[11px] text-white/50 mt-1">
-                  Exibindo métricas calculadas e lançamentos específicos de <strong className="text-white capitalize">{selectedMonthInfo.monthName}</strong>.
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setSelectedCalendarDate('')}
-              className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-brand-blue hover:text-white font-bold transition-all border border-brand-blue/30 shrink-0 cursor-pointer flex items-center gap-1.5"
-            >
-              <RotateCcw size={13} />
-              Exibir Todos os Meses
-            </button>
-          </div>
-        )}
 
         {/* Top Executive KPI Cards (Consolidado Geral) */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
@@ -596,18 +568,13 @@ export default function MarketingModule() {
                   {displayedRows.map((row, idx) => {
                     const hasData = row.investimento > 0 || row.leads > 0 || row.vendas > 0;
                     const isEven = idx % 2 === 0;
-                    const isSelectedMonth = selectedMonthInfo && (row.mes || '').toLowerCase().includes(selectedMonthInfo.monthName);
 
                     return (
                       <tr 
                         key={row.id} 
-                        className={`transition-colors group ${
-                          isSelectedMonth 
-                            ? 'bg-brand-blue/15 hover:bg-brand-blue/20 ring-1 ring-brand-blue/40 shadow-md' 
-                            : isEven 
-                              ? 'bg-[#101010] hover:bg-white/10' 
-                              : 'bg-[#151515] hover:bg-white/10'
-                        } ${!hasData && !isSelectedMonth ? 'opacity-40 hover:opacity-100' : ''}`}
+                        className={`transition-colors hover:bg-white/10 group ${
+                          isEven ? 'bg-[#101010]' : 'bg-[#151515]'
+                        } ${!hasData ? 'opacity-40 hover:opacity-100' : ''}`}
                       >
                         {/* Nº do Mês */}
                         <td className="py-3.5 px-3 font-bold text-white/90">{row.num}</td>
@@ -715,7 +682,7 @@ export default function MarketingModule() {
                 <tfoot>
                   <tr className="bg-gradient-to-r from-[#18181b] via-[#202024] to-[#18181b] border-t-2 border-brand-blue font-bold text-white text-xs divide-x divide-white/5 shadow-2xl">
                     <td className="py-4 px-3 text-brand-blue font-black uppercase tracking-wider text-left pl-4" colSpan={2}>
-                      Total Consolidado
+                      Total Consolidado {selectedYear !== 'Todos' ? `(${selectedYear})` : ''}
                     </td>
                     <td className="py-4 px-3 text-blue-300 font-extrabold bg-blue-500/10">
                       {formatBRL(totalInvestimento)}
