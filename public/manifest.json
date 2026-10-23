@@ -1,0 +1,17 @@
+{
+  "short_name": "DashClient",
+  "name": "DashClient — Gestão Comercial & Performance",
+  "description": "Painel de Gestão Comercial, Metas, Treinamentos e Growth",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "display": "standalone",
+  "orientation": "portrait"
+}
