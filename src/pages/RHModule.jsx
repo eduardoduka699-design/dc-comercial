@@ -139,7 +139,7 @@ export default function RHModule() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col">
-      <main className="flex-1 max-w-7xl w-full mx-auto p-8 overflow-y-auto">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 md:p-8 pb-24 md:pb-8 overflow-y-auto">
         
         {/* Top Header */}
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">

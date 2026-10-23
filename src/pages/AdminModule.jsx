@@ -198,59 +198,60 @@ export default function AdminModule() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col" translate="no">
-      <div className="flex flex-1 overflow-hidden">
-        <aside className={`${isAdminCollapsed ? 'w-20' : 'w-64'} border-r border-white/10 bg-[#101010] flex flex-col shrink-0 p-4 relative transition-all duration-300 select-none`}>
-          {/* Botão de Recolher no Centro da Borda */}
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden pb-16 md:pb-0">
+        {/* Topbar horizontal no celular / Sidebar lateral no desktop */}
+        <aside className={`w-full ${isAdminCollapsed ? 'md:w-20' : 'md:w-64'} border-b md:border-b-0 md:border-r border-white/10 bg-[#101010] flex flex-row md:flex-col shrink-0 p-2 sm:p-4 relative transition-all duration-300 select-none overflow-x-auto`}>
+          {/* Botão de Recolher no Centro da Borda (Desktop apenas) */}
           <button
             type="button"
             onClick={() => setIsAdminCollapsed(!isAdminCollapsed)}
-            className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[#1a1a1a] hover:bg-red-600 border border-white/20 hover:border-red-600 rounded-full flex items-center justify-center text-white/80 hover:text-white shadow-xl cursor-pointer z-40 transition-all hover:scale-110 focus:outline-none"
+            className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[#1a1a1a] hover:bg-red-600 border border-white/20 hover:border-red-600 rounded-full items-center justify-center text-white/80 hover:text-white shadow-xl cursor-pointer z-40 transition-all hover:scale-110 focus:outline-none"
             title={isAdminCollapsed ? "Expandir menu de Gestão" : "Recolher menu de Gestão"}
           >
             {isAdminCollapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
           </button>
 
           {!isAdminCollapsed && (
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-4 px-3 animate-in fade-in">
+            <p className="hidden md:block text-[10px] font-bold uppercase tracking-widest text-white/30 mb-4 px-3 animate-in fade-in">
               Gestão Master
             </p>
           )}
 
-          <div className="space-y-2">
+          <div className="flex md:flex-col gap-1.5 md:space-y-2 shrink-0">
             <button 
               onClick={() => setActiveTab('usuarios')}
               title={isAdminCollapsed ? "Usuários e Acessos" : undefined}
-              className={`w-full flex items-center ${isAdminCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} rounded-xl font-medium text-sm transition-colors ${
+              className={`flex items-center shrink-0 ${isAdminCollapsed ? 'md:justify-center p-2.5 md:p-3' : 'gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3'} rounded-xl font-medium text-xs md:text-sm transition-colors ${
                 activeTab === 'usuarios' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'text-white/50 hover:bg-white/5 hover:text-white'
               }`}
             >
-              <Users size={18} className="shrink-0" />
-              {!isAdminCollapsed && <span className="whitespace-nowrap animate-in fade-in">Usuários e Acessos</span>}
+              <Users size={16} className="shrink-0" />
+              <span className={`whitespace-nowrap ${isAdminCollapsed ? 'md:hidden' : ''}`}>Usuários</span>
             </button>
             <button 
               onClick={() => setActiveTab('integracoes')}
               title={isAdminCollapsed ? "Integrações (CRM)" : undefined}
-              className={`w-full flex items-center ${isAdminCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} rounded-xl font-medium text-sm transition-colors ${
+              className={`flex items-center shrink-0 ${isAdminCollapsed ? 'md:justify-center p-2.5 md:p-3' : 'gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3'} rounded-xl font-medium text-xs md:text-sm transition-colors ${
                 activeTab === 'integracoes' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'text-white/50 hover:bg-white/5 hover:text-white'
               }`}
             >
-              <Settings size={18} className="shrink-0" />
-              {!isAdminCollapsed && <span className="whitespace-nowrap animate-in fade-in">Integrações (CRM)</span>}
+              <Settings size={16} className="shrink-0" />
+              <span className={`whitespace-nowrap ${isAdminCollapsed ? 'md:hidden' : ''}`}>Integrações</span>
             </button>
             <button 
               onClick={() => setActiveTab('metas')}
               title={isAdminCollapsed ? "Engenharia de Metas" : undefined}
-              className={`w-full flex items-center ${isAdminCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} rounded-xl font-medium text-sm transition-colors ${
+              className={`flex items-center shrink-0 ${isAdminCollapsed ? 'md:justify-center p-2.5 md:p-3' : 'gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3'} rounded-xl font-medium text-xs md:text-sm transition-colors ${
                 activeTab === 'metas' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'text-white/50 hover:bg-white/5 hover:text-white'
               }`}
             >
-              <Calculator size={18} className="shrink-0" />
-              {!isAdminCollapsed && <span className="whitespace-nowrap animate-in fade-in">Engenharia de Metas</span>}
+              <Calculator size={16} className="shrink-0" />
+              <span className={`whitespace-nowrap ${isAdminCollapsed ? 'md:hidden' : ''}`}>Metas</span>
             </button>
           </div>
         </aside>
 
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 pb-24 md:pb-8">
           {activeTab === 'usuarios' && (
             <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="mb-10 flex justify-between items-end">

@@ -119,6 +119,37 @@ export default function RoleplayModule() {
 
         {/* WhatsApp Mock UI (Direita) */}
         <div className="flex-1 bg-[#0b1014] border border-white/10 rounded-2xl flex flex-col overflow-hidden relative shadow-2xl">
+          {/* Seletor Rápido de Papel no Celular */}
+          <div className="flex md:hidden items-center gap-1.5 p-2 bg-[#151515] border-b border-white/10 overflow-x-auto scrollbar-hide shrink-0 z-20">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-2 shrink-0">Treino:</span>
+            <button
+              type="button"
+              onClick={() => setRole('sdr')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                role === 'sdr' ? 'bg-brand-blue text-white shadow-sm' : 'text-white/50 hover:bg-white/5'
+              }`}
+            >
+              SDR (Triagem)
+            </button>
+            <button
+              type="button"
+              onClick={() => setRole('closer')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                role === 'closer' ? 'bg-brand-blue text-white shadow-sm' : 'text-white/50 hover:bg-white/5'
+              }`}
+            >
+              Closer (Fechamento)
+            </button>
+            <button
+              type="button"
+              onClick={() => setRole('bdr')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                role === 'bdr' ? 'bg-brand-blue text-white shadow-sm' : 'text-white/50 hover:bg-white/5'
+              }`}
+            >
+              BDR (Prospecção)
+            </button>
+          </div>
           {/* Fundo do WhatsApp */}
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url(https://web.whatsapp.com/img/bg-chat-tile-dark_a4be512e7195b6b733d9110b408f075d.png)' }}></div>
 

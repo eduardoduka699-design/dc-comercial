@@ -349,10 +349,10 @@ export default function MarketingModule() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans flex flex-col" translate="no">
-      <main className="flex-1 w-full max-w-[1600px] mx-auto p-6 md:p-8 overflow-y-auto">
+      <main className="flex-1 w-full max-w-[1600px] mx-auto p-3.5 sm:p-6 md:p-8 pb-24 md:pb-8 overflow-y-auto">
         
         {/* Cabeçalho da Página com Toolbar Integrada */}
-        <div className="mb-8 flex flex-col xl:flex-row xl:items-center justify-between gap-5 bg-[#151515] p-5 rounded-2xl border border-white/10 shadow-lg">
+        <div className="mb-6 sm:mb-8 flex flex-col xl:flex-row xl:items-center justify-between gap-4 sm:gap-5 bg-[#151515] p-4 sm:p-5 rounded-2xl border border-white/10 shadow-lg">
           {/* Lado Esquerdo: Título e Descrição */}
           <div className="min-w-0">
             <div className="flex items-center gap-3 mb-1.5 flex-wrap">
@@ -540,7 +540,12 @@ export default function MarketingModule() {
               Assessoria — Tráfego Pago
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Dica para dispositivos móveis */}
+            <div className="flex md:hidden items-center justify-between px-4 py-2 bg-black/40 text-[10px] text-white/50 border-b border-white/5">
+              <span>👈 Arraste para o lado para ver todos os indicadores 👉</span>
+            </div>
+
+            <div className="overflow-x-auto touch-pan-x scrollbar-thin">
               <table className="w-full text-center text-xs whitespace-nowrap border-collapse">
                 <thead>
                   <tr className="bg-[#18181b] text-white/90 font-extrabold uppercase text-[11px] divide-x divide-white/10 border-b border-white/10">

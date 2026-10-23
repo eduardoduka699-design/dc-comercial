@@ -962,14 +962,14 @@ export default function ProcessualModule() {
       {/* Barra superior de navegação */}
       
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar de subpastas */}
-        <aside className="w-64 border-r border-white/10 bg-[#101010] flex flex-col shrink-0 p-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-4 px-3">Subpastas</p>
-          <div className="space-y-2">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden pb-16 md:pb-0">
+        {/* Sidebar/Topbar de subpastas */}
+        <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-white/10 bg-[#101010] flex flex-row md:flex-col shrink-0 p-2.5 sm:p-4 overflow-x-auto">
+          <p className="hidden md:block text-[10px] font-bold uppercase tracking-widest text-white/30 mb-4 px-3">Subpastas</p>
+          <div className="flex md:flex-col gap-2 md:space-y-2 shrink-0 w-full">
             <button 
               onClick={() => setActiveTab('playbook')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-colors ${
+              className={`flex items-center gap-2 md:gap-3 px-3 py-2 md:px-4 md:py-3 rounded-xl font-medium text-xs md:text-sm transition-colors whitespace-nowrap shrink-0 ${
                 activeTab === 'playbook' ? 'bg-brand-blue/10 text-brand-blue border border-brand-blue/20' : 'text-white/50 hover:bg-white/5 hover:text-white'
               }`}
             >
@@ -977,7 +977,7 @@ export default function ProcessualModule() {
             </button>
             <button 
               onClick={() => setActiveTab('calls')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-colors ${
+              className={`flex items-center gap-2 md:gap-3 px-3 py-2 md:px-4 md:py-3 rounded-xl font-medium text-xs md:text-sm transition-colors whitespace-nowrap shrink-0 ${
                 activeTab === 'calls' ? 'bg-brand-blue/10 text-brand-blue border border-brand-blue/20' : 'text-white/50 hover:bg-white/5 hover:text-white'
               }`}
             >
@@ -985,7 +985,7 @@ export default function ProcessualModule() {
             </button>
             <button 
               onClick={() => setActiveTab('treinamentos')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-colors ${
+              className={`flex items-center gap-2 md:gap-3 px-3 py-2 md:px-4 md:py-3 rounded-xl font-medium text-xs md:text-sm transition-colors whitespace-nowrap shrink-0 ${
                 activeTab === 'treinamentos' ? 'bg-brand-blue/10 text-brand-blue border border-brand-blue/20' : 'text-white/50 hover:bg-white/5 hover:text-white'
               }`}
             >
