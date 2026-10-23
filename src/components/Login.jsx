@@ -21,6 +21,7 @@ export default function Login({ onLogin }) {
     isInstallable,
     isStandalone,
     isIOS,
+    isInAppBrowser,
     promptInstall,
     showInstallGuide,
     setShowInstallGuide
@@ -283,15 +284,15 @@ export default function Login({ onLogin }) {
           )}
         </div>
 
-        {/* Botão de Instalação do Aplicativo na tela de Login */}
-        {isInstallable && (
+        {/* Botão de Instalação do Aplicativo na tela de Login (Sempre visível para facilitar acesso) */}
+        {!isStandalone && (
           <div className="mt-6 pt-5 border-t border-border/60">
             <button
               type="button"
               onClick={promptInstall}
-              className="w-full py-2.5 px-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-brand-blue/40 rounded-xl text-xs font-bold text-brand-blue flex items-center justify-center gap-2 transition-all shadow-sm"
+              className="w-full py-3 px-4 bg-brand-blue/15 hover:bg-brand-blue hover:text-white border border-brand-blue/30 rounded-2xl text-xs font-bold text-brand-blue flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer group"
             >
-              <Download size={14} />
+              <Download size={16} className="group-hover:scale-110 transition-transform text-brand-blue group-hover:text-white" />
               <span>Instalar Aplicativo no Celular / Computador</span>
             </button>
           </div>
@@ -308,6 +309,7 @@ export default function Login({ onLogin }) {
         isOpen={showInstallGuide}
         onClose={() => setShowInstallGuide(false)}
         isIOS={isIOS}
+        isInAppBrowser={isInAppBrowser}
       />
     </div>
   );

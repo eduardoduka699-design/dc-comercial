@@ -1,7 +1,7 @@
 import React from 'react';
-import { X, Smartphone, Monitor, Share2, PlusSquare, CheckCircle, Download } from 'lucide-react';
+import { X, Smartphone, Monitor, Share2, PlusSquare, Download, AlertTriangle, ExternalLink } from 'lucide-react';
 
-export default function InstallModal({ isOpen, onClose, isIOS }) {
+export default function InstallModal({ isOpen, onClose, isIOS, isInAppBrowser }) {
   if (!isOpen) return null;
 
   return (
@@ -27,6 +27,17 @@ export default function InstallModal({ isOpen, onClose, isIOS }) {
             <p className="text-xs text-white/50">Acesse com 1 toque direto da sua tela inicial</p>
           </div>
         </div>
+
+        {/* Alerta de Navegador Embutido (WhatsApp / Instagram) */}
+        {isInAppBrowser && (
+          <div className="mb-4 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-start gap-3">
+            <AlertTriangle size={18} className="text-amber-400 shrink-0 mt-0.5" />
+            <div className="text-xs text-amber-200 leading-relaxed">
+              <strong className="text-amber-300 block font-bold mb-0.5">Você abriu pelo WhatsApp ou rede social</strong>
+              Navegadores embutidos bloqueiam a instalação. Toque nos <strong className="text-white">três pontinhos (⋮)</strong> no topo da tela e selecione <strong className="text-white">"Abrir no Chrome"</strong> ou <strong className="text-white">"Abrir no Safari"</strong>.
+            </div>
+          </div>
+        )}
 
         {isIOS ? (
           /* Instruções para iPhone / iPad */
@@ -54,7 +65,7 @@ export default function InstallModal({ isOpen, onClose, isIOS }) {
                 3
               </div>
               <p className="text-white/80 text-xs leading-relaxed">
-                Toque em <strong className="text-white">"Adicionar"</strong> no canto superior direito. O DashClient aparecerá como um aplicativo nativo!
+                Toque em <strong className="text-white">"Adicionar"</strong> no canto superior direito. O DashClient aparecerá como um aplicativo nativo no seu iPhone!
               </p>
             </div>
           </div>
@@ -90,9 +101,9 @@ export default function InstallModal({ isOpen, onClose, isIOS }) {
         <div className="mt-5 flex items-center justify-end gap-3">
           <button
             onClick={onClose}
-            className="w-full bg-brand-blue hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-brand-blue/20 text-sm"
+            className="w-full bg-brand-blue hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-brand-blue/20 text-sm cursor-pointer"
           >
-            Entendi
+            Entendi, vou instalar
           </button>
         </div>
       </div>

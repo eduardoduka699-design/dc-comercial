@@ -8,19 +8,18 @@ export function usePWAInstall() {
   const [showInstallGuide, setShowInstallGuide] = useState(false);
 
   useEffect(() => {
-    // Detecta se já está rodando instalado como PWA (modo standalone)
+    // Detecta se REALMENTE está rodando como app instalado (modo standalone exclusivo)
     const checkStandalone = () => {
       const isStandaloneMode = 
         window.matchMedia('(display-mode: standalone)').matches || 
-        window.navigator.standalone === true ||
-        document.referrer.includes('android-app://');
+        window.matchMedia('(display-mode: fullscreen)').matches ||
+        window.navigator.standalone === true;
       setIsStandalone(Boolean(isStandaloneMode));
     };
 
     checkStandalone();
 
     const handleBeforeInstallPrompt = (e) => {
-      // Previne o banner padrão e armazena o evento
       e.preventDefault();
       globalDeferredPrompt = e;
       setDeferredPrompt(e);
@@ -45,6 +44,11 @@ export function usePWAInstall() {
 
   const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
+  // Detecta se o usuário está dentro do navegador interno do WhatsApp, Instagram, etc.
+  const isInAppBrowser = typeof navigator !== 'undefined' && (
+    /FBAN|FBAV|Instagram|WhatsApp|Telegram|Line|Twitter|Snapchat/i.test(navigator.userAgent)
+  );
+
   const promptInstall = async () => {
     if (deferredPrompt) {
       try {
@@ -59,7 +63,7 @@ export function usePWAInstall() {
         setShowInstallGuide(true);
       }
     } else {
-      // Se não há prompt nativo disponível (iOS, navegador já instalado ou desktop sem evento disparado)
+      // Se não há prompt nativo (iOS, Webview/WhatsApp ou navegador sem evento), exibe o guia
       setShowInstallGuide(true);
     }
   };
@@ -68,6 +72,7 @@ export function usePWAInstall() {
     isInstallable: !isStandalone,
     isStandalone,
     isIOS,
+    isInAppBrowser,
     promptInstall,
     showInstallGuide,
     setShowInstallGuide,

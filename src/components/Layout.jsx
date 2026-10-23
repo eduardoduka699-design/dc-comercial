@@ -29,6 +29,7 @@ export default function Layout({ children, userRole, currentUser, onLogout }) {
     isInstallable,
     isStandalone,
     isIOS,
+    isInAppBrowser,
     promptInstall,
     showInstallGuide,
     setShowInstallGuide
@@ -89,14 +90,14 @@ export default function Layout({ children, userRole, currentUser, onLogout }) {
 
         <div className="flex items-center gap-2">
           {/* Botão Instalar App no Header Mobile */}
-          {isInstallable && (
+          {!isStandalone && (
             <button
               type="button"
               onClick={promptInstall}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-brand-blue/15 border border-brand-blue/30 text-brand-blue text-xs font-bold hover:bg-brand-blue hover:text-white transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-blue text-white text-xs font-bold hover:bg-blue-600 transition-all shadow-md shadow-brand-blue/30 active:scale-95 cursor-pointer"
               title="Instalar aplicativo"
             >
-              <Download size={13} />
+              <Download size={14} />
               <span>Instalar</span>
             </button>
           )}
@@ -191,17 +192,17 @@ export default function Layout({ children, userRole, currentUser, onLogout }) {
             {/* Rodapé da Gaveta Mobile */}
             <div className="pt-4 border-t border-white/10 space-y-3 shrink-0">
               {/* Botão de Instalação na Gaveta */}
-              {isInstallable && (
+              {!isStandalone && (
                 <button
                   type="button"
                   onClick={() => {
                     setMobileMenuOpen(false);
                     promptInstall();
                   }}
-                  className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-gradient-to-r from-brand-blue/20 to-blue-600/20 border border-brand-blue/30 text-brand-blue hover:text-white hover:bg-brand-blue text-xs font-bold transition-all shadow-md"
+                  className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl bg-brand-blue hover:bg-blue-600 text-white text-xs font-bold transition-all shadow-lg shadow-brand-blue/30 cursor-pointer"
                 >
-                  <Download size={15} />
-                  <span>Instalar App no Celular</span>
+                  <Download size={16} />
+                  <span>📥 Instalar App no Celular</span>
                 </button>
               )}
 
@@ -432,11 +433,12 @@ export default function Layout({ children, userRole, currentUser, onLogout }) {
         </button>
       </nav>
 
-      {/* Modal explicativo de instalação PWA (iOS e fallback desktop/Android) */}
+      {/* Modal explicativo de instalação PWA (iOS, Android, In-App e Computador) */}
       <InstallModal
         isOpen={showInstallGuide}
         onClose={() => setShowInstallGuide(false)}
         isIOS={isIOS}
+        isInAppBrowser={isInAppBrowser}
       />
 
     </div>
