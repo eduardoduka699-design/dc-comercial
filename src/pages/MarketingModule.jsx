@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Megaphone, 
   TrendingUp, 
@@ -127,6 +127,16 @@ export default function MarketingModule() {
   });
 
   const [editingRow, setEditingRow] = useState(null);
+  const [editingCell, setEditingCell] = useState(null); // { rowId, field, value }
+  const cellInputRef = useRef(null);
+  const isNavigatingRef = useRef(false);
+
+  useEffect(() => {
+    if (editingCell && cellInputRef.current) {
+      cellInputRef.current.focus();
+      cellInputRef.current.select();
+    }
+  }, [editingCell?.rowId, editingCell?.field]);
   const [activeView, setActiveView] = useState('tabela'); // 'tabela' ou 'graficos'
   const [selectedYear, setSelectedYear] = useState('Todos');
 
@@ -238,6 +248,239 @@ export default function MarketingModule() {
   const taxaAgendamentoGeral = totalLeads > 0 && totalReunioesMarcadas > 0 ? (totalReunioesMarcadas / totalLeads) * 100 : 0;
   const taxaComparecimentoGeral = totalReunioesMarcadas > 0 && totalReunioesRealizadas > 0 ? (totalReunioesRealizadas / totalReunioesMarcadas) * 100 : 0;
   const taxaVendaGeral = totalReunioesRealizadas > 0 && totalVendas > 0 ? (totalVendas / totalReunioesRealizadas) * 100 : 0;
+
+  const EDITABLE_FIELDS_ORDER = [
+    'num',
+    'mes',
+    'investimento',
+    'leads',
+    'reunioesMarcadas',
+    'reunioesRealizadas',
+    'comparecimentosNota',
+    'vendas',
+    'tkm',
+    'valorVendas'
+  ];
+
+  const parseUserInt = (val) => {
+    if (typeof val === 'number') return Math.round(val);
+    if (!val) return 0;
+    const cleaned = String(val).replace(/\D/g, '');
+    const parsed = parseInt(cleaned, 10);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const parseUserFloat = (val) => {
+    if (typeof val === 'number') return val;
+    if (!val) return 0;
+    let str = String(val).replace(/R\$\s?/g, '').trim();
+    if (str.includes(',')) {
+      str = str.replace(/\./g, '').replace(',', '.');
+    } else if (str.split('.').length > 2) {
+      str = str.replace(/\./g, '');
+    }
+    const parsed = parseFloat(str);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const getFieldRawValue = (row, field) => {
+    if (field === 'investimento') return row.investimento > 0 ? String(row.investimento) : '';
+    if (field === 'leads') return row.leads > 0 ? String(row.leads) : '';
+    if (field === 'reunioesMarcadas') return row.reunioesMarcadas > 0 ? String(row.reunioesMarcadas) : '';
+    if (field === 'reunioesRealizadas') return row.reunioesRealizadas > 0 ? String(row.reunioesRealizadas) : '';
+    if (field === 'vendas') return row.vendas > 0 ? String(row.vendas) : '';
+    if (field === 'tkm') return row.tkm > 0 ? String(row.tkm) : '';
+    if (field === 'valorVendas') return row.valorVendas > 0 ? String(row.valorVendas) : '';
+    if (field === 'comparecimentosNota') return row.comparecimentosNota === '-' ? '' : (row.comparecimentosNota || '');
+    return row[field] || '';
+  };
+
+  const handleStartInlineEdit = (row, field) => {
+    setEditingCell({
+      rowId: row.id,
+      field,
+      value: getFieldRawValue(row, field)
+    });
+  };
+
+  const handleCommitInlineEdit = (rowId, field, rawValue, navigateDirection = null) => {
+    setPlanilha(prev => prev.map(row => {
+      if (row.id !== rowId) return row;
+
+      let updatedValue;
+      if (field === 'num' || field === 'mes' || field === 'comparecimentosNota') {
+        updatedValue = String(rawValue || '').trim();
+        if (field === 'comparecimentosNota' && !updatedValue) {
+          updatedValue = '-';
+        }
+      } else if (field === 'leads' || field === 'reunioesMarcadas' || field === 'reunioesRealizadas' || field === 'vendas') {
+        updatedValue = parseUserInt(rawValue);
+      } else if (field === 'investimento' || field === 'tkm' || field === 'valorVendas') {
+        updatedValue = parseUserFloat(rawValue);
+      } else {
+        updatedValue = rawValue;
+      }
+
+      const updatedRow = { ...row, [field]: updatedValue };
+
+      // Sincronização inteligente de vendas, tkm e faturamento
+      if (field === 'vendas') {
+        if (updatedValue > 0 && updatedRow.tkm > 0 && (!row.valorVendas || row.valorVendas === row.vendas * row.tkm)) {
+          updatedRow.valorVendas = updatedValue * updatedRow.tkm;
+        }
+      } else if (field === 'tkm') {
+        if (updatedValue > 0 && updatedRow.vendas > 0 && (!row.valorVendas || row.valorVendas === row.vendas * row.tkm)) {
+          updatedRow.valorVendas = updatedRow.vendas * updatedValue;
+        }
+      } else if (field === 'valorVendas') {
+        if (updatedValue > 0 && updatedRow.vendas > 0 && (!row.tkm || row.tkm === row.valorVendas / row.vendas)) {
+          updatedRow.tkm = updatedValue / updatedRow.vendas;
+        }
+      }
+
+      return updatedRow;
+    }));
+
+    if (navigateDirection) {
+      navigateNextCell(rowId, field, navigateDirection);
+    } else {
+      setEditingCell(null);
+    }
+  };
+
+  const navigateNextCell = (currentRowId, currentField, direction) => {
+    const currentFieldIndex = EDITABLE_FIELDS_ORDER.indexOf(currentField);
+    const currentRowIndex = displayedRows.findIndex(r => r.id === currentRowId);
+
+    if (currentFieldIndex === -1 || currentRowIndex === -1) {
+      setEditingCell(null);
+      return;
+    }
+
+    if (direction === 'next' || direction === 1) {
+      if (currentFieldIndex < EDITABLE_FIELDS_ORDER.length - 1) {
+        const nextField = EDITABLE_FIELDS_ORDER[currentFieldIndex + 1];
+        const currentRow = displayedRows[currentRowIndex];
+        setEditingCell({
+          rowId: currentRowId,
+          field: nextField,
+          value: getFieldRawValue(currentRow, nextField)
+        });
+      } else if (currentRowIndex < displayedRows.length - 1) {
+        const nextRow = displayedRows[currentRowIndex + 1];
+        const nextField = EDITABLE_FIELDS_ORDER[0];
+        setEditingCell({
+          rowId: nextRow.id,
+          field: nextField,
+          value: getFieldRawValue(nextRow, nextField)
+        });
+      } else {
+        setEditingCell(null);
+      }
+    } else if (direction === 'prev' || direction === -1) {
+      if (currentFieldIndex > 0) {
+        const prevField = EDITABLE_FIELDS_ORDER[currentFieldIndex - 1];
+        const currentRow = displayedRows[currentRowIndex];
+        setEditingCell({
+          rowId: currentRowId,
+          field: prevField,
+          value: getFieldRawValue(currentRow, prevField)
+        });
+      } else if (currentRowIndex > 0) {
+        const prevRow = displayedRows[currentRowIndex - 1];
+        const prevField = EDITABLE_FIELDS_ORDER[EDITABLE_FIELDS_ORDER.length - 1];
+        setEditingCell({
+          rowId: prevRow.id,
+          field: prevField,
+          value: getFieldRawValue(prevRow, prevField)
+        });
+      } else {
+        setEditingCell(null);
+      }
+    }
+  };
+
+  // Helper para renderizar célula de preenchimento (editável com 2 cliques)
+  const renderEditableCell = ({ row, field, displayContent, className = '', title = 'Dê 2 cliques para editar', inputWidth = 'w-24' }) => {
+    const isEditing = editingCell && editingCell.rowId === row.id && editingCell.field === field;
+
+    if (isEditing) {
+      return (
+        <td className={`p-1 ${className} bg-brand-blue/20 border-2 border-brand-blue shadow-[0_0_15px_rgba(0,112,243,0.3)]`}>
+          <input
+            ref={cellInputRef}
+            type="text"
+            value={editingCell.value}
+            onChange={e => setEditingCell(prev => ({ ...prev, value: e.target.value }))}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                isNavigatingRef.current = true;
+                handleCommitInlineEdit(row.id, field, editingCell.value);
+                setTimeout(() => { isNavigatingRef.current = false; }, 80);
+              } else if (e.key === 'Escape') {
+                e.preventDefault();
+                setEditingCell(null);
+              } else if (e.key === 'Tab') {
+                e.preventDefault();
+                isNavigatingRef.current = true;
+                handleCommitInlineEdit(row.id, field, editingCell.value, e.shiftKey ? 'prev' : 'next');
+                setTimeout(() => { isNavigatingRef.current = false; }, 80);
+              }
+            }}
+            onBlur={() => {
+              if (isNavigatingRef.current) return;
+              handleCommitInlineEdit(row.id, field, editingCell.value);
+            }}
+            className={`bg-[#050505] text-white font-extrabold text-xs py-1 px-2 rounded-lg border border-brand-blue/60 focus:outline-none focus:ring-1 focus:ring-brand-blue text-center mx-auto block ${inputWidth}`}
+            placeholder="0"
+          />
+        </td>
+      );
+    }
+
+    return (
+      <td
+        className={`py-3.5 px-3 transition-all cursor-pointer hover:bg-brand-blue/15 hover:ring-1 hover:ring-brand-blue/40 select-none group/cell relative ${className}`}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          handleStartInlineEdit(row, field);
+        }}
+        title={title}
+      >
+        <div className="flex items-center justify-center gap-1">
+          <span>{displayContent}</span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleStartInlineEdit(row, field);
+            }}
+            className="opacity-0 group-hover/cell:opacity-70 hover:opacity-100 text-brand-blue p-0.5 rounded transition-opacity"
+            title="Editar este campo"
+          >
+            <Edit3 size={11} />
+          </button>
+        </div>
+      </td>
+    );
+  };
+
+  // Helper para renderizar célula calculada (fórmula automática)
+  const renderCalculatedCell = ({ row, displayContent, className = '', formulaTitle = 'Calculado automaticamente' }) => {
+    return (
+      <td
+        className={`py-3.5 px-3 select-none transition-colors cursor-help hover:brightness-110 ${className}`}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          handleOpenEdit(row);
+        }}
+        title={`${formulaTitle} (Dê 2 cliques para abrir editor do mês)`}
+      >
+        {displayContent}
+      </td>
+    );
+  };
 
   // Handlers de edição
   const handleOpenEdit = (row) => {
@@ -535,9 +778,15 @@ export default function MarketingModule() {
           <div className="bg-[#151515] border border-white/10 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in duration-300">
             
             {/* Banner Superior da Planilha */}
-            <div className="bg-gradient-to-r from-brand-blue via-blue-600 to-indigo-600 px-6 py-3 text-white font-black text-center text-sm md:text-base tracking-wider uppercase shadow-inner flex items-center justify-center gap-2">
-              <FileSpreadsheet size={18} />
-              Assessoria — Tráfego Pago
+            <div className="bg-gradient-to-r from-brand-blue via-blue-600 to-indigo-600 px-6 py-3 text-white font-black text-center text-sm md:text-base tracking-wider uppercase shadow-inner flex flex-wrap items-center justify-center gap-3">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet size={18} />
+                <span>Assessoria — Tráfego Pago</span>
+              </div>
+              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-black/35 backdrop-blur-sm text-cyan-300 text-xs font-bold tracking-normal normal-case border border-cyan-400/30 shadow-sm">
+                <Edit3 size={12} />
+                <span>Dê dois cliques em qualquer etapa para editar</span>
+              </span>
             </div>
 
             {/* Dica para dispositivos móveis */}
@@ -577,101 +826,174 @@ export default function MarketingModule() {
                     return (
                       <tr 
                         key={row.id} 
+                        onDoubleClick={() => handleOpenEdit(row)}
                         className={`transition-colors hover:bg-white/10 group ${
                           isEven ? 'bg-[#101010]' : 'bg-[#151515]'
                         } ${!hasData ? 'opacity-40 hover:opacity-100' : ''}`}
                       >
-                        {/* Nº do Mês */}
-                        <td className="py-3.5 px-3 font-bold text-white/90">{row.num}</td>
+                        {/* 1. Nº do Mês (Editável) */}
+                        {renderEditableCell({
+                          row,
+                          field: 'num',
+                          displayContent: row.num,
+                          className: 'font-bold text-white/90',
+                          title: 'Dê 2 cliques para editar o Nº do Mês',
+                          inputWidth: 'w-20'
+                        })}
 
-                        {/* Mês */}
-                        <td className="py-3.5 px-3 font-medium text-white/80">{row.mes}</td>
+                        {/* 2. Mês / Período (Editável) */}
+                        {renderEditableCell({
+                          row,
+                          field: 'mes',
+                          displayContent: row.mes,
+                          className: 'font-medium text-white/80',
+                          title: 'Dê 2 cliques para editar o Mês/Ano',
+                          inputWidth: 'w-28'
+                        })}
 
-                        {/* Investimento */}
-                        <td className="py-3.5 px-3 font-bold text-blue-300 bg-blue-500/5">
-                          {row.investimento > 0 ? formatBRL(row.investimento) : '-'}
-                        </td>
+                        {/* 3. Investimento (Editável) */}
+                        {renderEditableCell({
+                          row,
+                          field: 'investimento',
+                          displayContent: row.investimento > 0 ? formatBRL(row.investimento) : '-',
+                          className: 'font-bold text-blue-300 bg-blue-500/5',
+                          title: 'Dê 2 cliques para editar o Investimento (R$)',
+                          inputWidth: 'w-24'
+                        })}
 
-                        {/* Leads Gerados */}
-                        <td className="py-3.5 px-3 font-bold text-brand-blue">
-                          {row.leads > 0 ? formatNum(row.leads) : '-'}
-                        </td>
+                        {/* 4. Leads Gerados (Editável) */}
+                        {renderEditableCell({
+                          row,
+                          field: 'leads',
+                          displayContent: row.leads > 0 ? formatNum(row.leads) : '-',
+                          className: 'font-bold text-brand-blue',
+                          title: 'Dê 2 cliques para editar os Leads Gerados',
+                          inputWidth: 'w-20'
+                        })}
 
-                        {/* CPL */}
-                        <td className="py-3.5 px-3 font-bold text-purple-300 bg-purple-500/5">
-                          {row.cpl > 0 ? formatBRL(row.cpl) : '-'}
-                        </td>
+                        {/* 5. CPL (Calculado) */}
+                        {renderCalculatedCell({
+                          row,
+                          displayContent: row.cpl > 0 ? formatBRL(row.cpl) : '-',
+                          className: 'font-bold text-purple-300 bg-purple-500/5',
+                          formulaTitle: 'CPL = Investimento ÷ Leads'
+                        })}
 
-                        {/* Reuniões marcadas */}
-                        <td className="py-3.5 px-3 text-white/70">
-                          {row.reunioesMarcadas > 0 ? row.reunioesMarcadas : '-'}
-                        </td>
+                        {/* 6. Reuniões marcadas (Editável) */}
+                        {renderEditableCell({
+                          row,
+                          field: 'reunioesMarcadas',
+                          displayContent: row.reunioesMarcadas > 0 ? row.reunioesMarcadas : '-',
+                          className: 'text-white/70',
+                          title: 'Dê 2 cliques para editar as Reuniões Marcadas',
+                          inputWidth: 'w-20'
+                        })}
 
-                        {/* Taxa de agendamento */}
-                        <td className="py-3.5 px-3 font-medium text-cyan-300">
-                          {row.taxaAgendamento !== null ? `${row.taxaAgendamento.toFixed(2)}%` : '-'}
-                        </td>
+                        {/* 7. Taxa de agendamento (Calculado) */}
+                        {renderCalculatedCell({
+                          row,
+                          displayContent: row.taxaAgendamento !== null ? `${row.taxaAgendamento.toFixed(2)}%` : '-',
+                          className: 'font-medium text-cyan-300',
+                          formulaTitle: 'Taxa de Agendamento = Reuniões Marcadas ÷ Leads'
+                        })}
 
-                        {/* Reuniões realizadas */}
-                        <td className="py-3.5 px-3 font-semibold text-white/90">
-                          {row.reunioesRealizadas > 0 ? row.reunioesRealizadas : '-'}
-                        </td>
+                        {/* 8. Reuniões realizadas (Editável) */}
+                        {renderEditableCell({
+                          row,
+                          field: 'reunioesRealizadas',
+                          displayContent: row.reunioesRealizadas > 0 ? row.reunioesRealizadas : '-',
+                          className: 'font-semibold text-white/90',
+                          title: 'Dê 2 cliques para editar as Reuniões Realizadas',
+                          inputWidth: 'w-20'
+                        })}
 
-                        {/* Taxa de comparecimento */}
-                        <td className="py-3.5 px-3 font-medium text-emerald-300">
-                          {row.taxaComparecimento !== null ? `${row.taxaComparecimento.toFixed(2)}%` : '-'}
-                        </td>
+                        {/* 9. Taxa de comparecimento (Calculado) */}
+                        {renderCalculatedCell({
+                          row,
+                          displayContent: row.taxaComparecimento !== null ? `${row.taxaComparecimento.toFixed(2)}%` : '-',
+                          className: 'font-medium text-emerald-300',
+                          formulaTitle: 'Taxa de Comparecimento = Reuniões Realizadas ÷ Reuniões Marcadas'
+                        })}
 
-                        {/* Comparecimentos (Nota) */}
-                        <td className="py-3.5 px-3 text-white/40">
-                          {row.comparecimentosNota || '-'}
-                        </td>
+                        {/* 10. Comparecimentos (Nota - Editável) */}
+                        {renderEditableCell({
+                          row,
+                          field: 'comparecimentosNota',
+                          displayContent: row.comparecimentosNota || '-',
+                          className: 'text-white/40',
+                          title: 'Dê 2 cliques para editar observações de comparecimento',
+                          inputWidth: 'w-24'
+                        })}
 
-                        {/* Taxa de venda */}
-                        <td className="py-3.5 px-3 font-bold text-emerald-400">
-                          {row.taxaVenda !== null ? `${Math.round(row.taxaVenda)}%` : '-'}
-                        </td>
+                        {/* 11. Taxa de venda (Calculado) */}
+                        {renderCalculatedCell({
+                          row,
+                          displayContent: row.taxaVenda !== null ? `${Math.round(row.taxaVenda)}%` : '-',
+                          className: 'font-bold text-emerald-400',
+                          formulaTitle: 'Taxa de Venda = Vendas ÷ Reuniões Realizadas'
+                        })}
 
-                        {/* Vendas */}
-                        <td className="py-3.5 px-3 font-bold text-[#10b981] bg-[#10b981]/10 text-sm">
-                          {row.vendas > 0 ? row.vendas : '-'}
-                        </td>
+                        {/* 12. Vendas (Editável) */}
+                        {renderEditableCell({
+                          row,
+                          field: 'vendas',
+                          displayContent: row.vendas > 0 ? row.vendas : '-',
+                          className: 'font-bold text-[#10b981] bg-[#10b981]/10 text-sm',
+                          title: 'Dê 2 cliques para editar o número de Vendas',
+                          inputWidth: 'w-16'
+                        })}
 
-                        {/* CAC */}
-                        <td className="py-3.5 px-3 font-medium text-indigo-300">
-                          {row.cac > 0 ? formatBRL(row.cac) : '-'}
-                        </td>
+                        {/* 13. CAC (Calculado) */}
+                        {renderCalculatedCell({
+                          row,
+                          displayContent: row.cac > 0 ? formatBRL(row.cac) : '-',
+                          className: 'font-medium text-indigo-300',
+                          formulaTitle: 'CAC = Investimento ÷ Vendas'
+                        })}
 
-                        {/* TKM */}
-                        <td className="py-3.5 px-3 font-medium text-white/80">
-                          {row.tkm > 0 ? formatBRL(row.tkm) : '-'}
-                        </td>
+                        {/* 14. TKM (Editável) */}
+                        {renderEditableCell({
+                          row,
+                          field: 'tkm',
+                          displayContent: row.tkm > 0 ? formatBRL(row.tkm) : '-',
+                          className: 'font-medium text-white/80',
+                          title: 'Dê 2 cliques para editar o TKM (Ticket Médio)',
+                          inputWidth: 'w-24'
+                        })}
 
-                        {/* Valor de Vendas (Faturamento) */}
-                        <td className="py-3.5 px-3 font-bold text-[#10b981] bg-[#10b981]/10">
-                          {row.valorVendas > 0 ? formatBRL(row.valorVendas) : '-'}
-                        </td>
+                        {/* 15. Valor de Vendas (Editável) */}
+                        {renderEditableCell({
+                          row,
+                          field: 'valorVendas',
+                          displayContent: row.valorVendas > 0 ? formatBRL(row.valorVendas) : '-',
+                          className: 'font-bold text-[#10b981] bg-[#10b981]/10',
+                          title: 'Dê 2 cliques para editar o Valor de Vendas (Faturamento)',
+                          inputWidth: 'w-28'
+                        })}
 
-                        {/* ROAS */}
-                        <td className="py-3.5 px-3 font-black text-sm bg-black/60 text-[#10b981]">
-                          {row.roas > 0 ? `${row.roas.toFixed(2)}` : '-'}
-                        </td>
+                        {/* 16. ROAS (Calculado) */}
+                        {renderCalculatedCell({
+                          row,
+                          displayContent: row.roas > 0 ? `${row.roas.toFixed(2)}` : '-',
+                          className: 'font-black text-sm bg-black/60 text-[#10b981]',
+                          formulaTitle: 'ROAS = Valor de Vendas ÷ Investimento'
+                        })}
 
-                        {/* Ações */}
+                        {/* 17. Ações */}
                         <td className="py-3.5 px-2">
                           <div className="flex items-center justify-center gap-1.5 opacity-70 group-hover:opacity-100 transition-opacity">
                             <button
                               type="button"
                               onClick={() => handleOpenEdit(row)}
-                              className="p-1.5 rounded-lg bg-white/5 hover:bg-brand-blue/20 text-white/70 hover:text-brand-blue border border-white/5 hover:border-brand-blue/30 transition-colors"
-                              title="Editar valores deste mês"
+                              className="p-1.5 rounded-lg bg-white/5 hover:bg-brand-blue/20 text-white/70 hover:text-brand-blue border border-white/5 hover:border-brand-blue/30 transition-colors cursor-pointer"
+                              title="Abrir editor completo deste mês"
                             >
                               <Edit3 size={13} />
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDeleteRow(row.id)}
-                              className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-white/70 hover:text-red-400 border border-white/5 hover:border-red-500/30 transition-colors"
+                              className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-white/70 hover:text-red-400 border border-white/5 hover:border-red-500/30 transition-colors cursor-pointer"
                               title="Excluir este mês"
                             >
                               <Trash2 size={13} />
@@ -735,9 +1057,12 @@ export default function MarketingModule() {
               </table>
             </div>
 
-            <div className="p-4 bg-[#101010] border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-white/40">
-              <p>
-                💡 <strong>Dica:</strong> Clique no ícone de lápis para editar qualquer mês. O CPL, Taxas, CAC, Faturamento e ROAS são calculados automaticamente.
+            <div className="p-4 bg-[#101010] border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-white/50">
+              <p className="flex items-center gap-2 flex-wrap">
+                <span className="text-brand-blue font-bold flex items-center gap-1">
+                  <Edit3 size={13} /> Editável com 2 cliques:
+                </span>
+                <span>Dê dois cliques em qualquer etapa de preenchimento para editar direto na célula (Enter salva, Tab avança para a próxima etapa). CPL, Taxas, CAC e ROAS recalculam automaticamente na hora.</span>
               </p>
               <div className="flex items-center gap-4">
                 <span className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-brand-blue"></div> Investimento</span>
