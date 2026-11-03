@@ -275,7 +275,8 @@ export default function ComercialModule({ currentUser }) {
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'funnel', label: 'Funil e Conversão', icon: Calculator },
+    { id: 'funnel', label: 'Funil e Conversão', icon: Target },
+    { id: 'calculator', label: 'Engenharia Reversa', icon: Calculator },
     { id: 'ranking', label: 'Ranking', icon: Trophy },
   ];
 
@@ -465,6 +466,12 @@ export default function ComercialModule({ currentUser }) {
 
             {activeMenu === 'funnel' && (
               <FunnelView role={activeTab} metrics={metrics} setMetrics={setMetrics} goals={goals[activeTab]} />
+            )}
+
+            {activeMenu === 'calculator' && (
+              <div className="space-y-8 animate-in fade-in duration-300">
+                <ReverseCalculator onSaveGoals={(newGoals) => setGoals(newGoals)} />
+              </div>
             )}
 
             {activeMenu === 'ranking' && (
