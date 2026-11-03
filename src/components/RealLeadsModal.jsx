@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, Search, Phone, ExternalLink, Zap, Clock, ShieldCheck, CheckCircle2, User, Copy, Check } from 'lucide-react';
+import { X, Search, Phone, ExternalLink, Zap, Clock, ShieldCheck, CheckCircle2, User, Copy, Check, Filter } from 'lucide-react';
 
 export default function RealLeadsModal({ isOpen, onClose, leads = [], onRefresh, isRefreshing }) {
   const [search, setSearch] = useState('');
+  const [stageFilter, setStageFilter] = useState('all'); // all | fechado | assinado | reunioes | outros
   const [copied, setCopied] = useState(false);
   const webhookUrl = 'https://dc-comercial.vercel.app/api/webhook/legendary';
 
@@ -14,23 +15,63 @@ export default function RealLeadsModal({ isOpen, onClose, leads = [], onRefresh,
     const tel = (lead.telefone || '').toLowerCase();
     const tags = Array.isArray(lead.tags) ? lead.tags.join(' ').toLowerCase() : '';
     const etapa = (lead.etapa_funil || '').toLowerCase();
-    return nome.includes(q) || tel.includes(q) || tags.includes(q) || etapa.includes(q);
+
+    // Match text search
+    const matchesSearch = nome.includes(q) || tel.includes(q) || tags.includes(q) || etapa.includes(q);
+    if (!matchesSearch) return false;
+
+    // Match stage filter
+    if (stageFilter === 'fechado') {
+      return etapa === 'fechado' || tags.includes('pagamento') || tags.includes('pago');
+    }
+    if (stageFilter === 'assinado') {
+      return (etapa === 'contrato_assinado' || tags.includes('assinado')) && !(etapa === 'fechado' || tags.includes('pagamento') || tags.includes('pago'));
+    }
+    if (stageFilter === 'reunioes') {
+      return ['consulta_realizada', 'agendado'].includes(etapa) || tags.includes('reuni') || tags.includes('agend');
+    }
+    if (stageFilter === 'outros') {
+      return ['qualificado', 'contatado', 'recebido'].includes(etapa);
+    }
+    return true;
   });
 
-  const getStageBadge = (etapa) => {
+  const getStageBadge = (etapa, tags = []) => {
+    const tagsStr = (Array.isArray(tags) ? tags.join(' ') : '').toLowerCase();
+    const isPago = etapa === 'fechado' || tagsStr.includes('pagamento') || tagsStr.includes('pago');
+    const isAssinado = (etapa === 'contrato_assinado' || tagsStr.includes('assinado')) && !isPago;
+
+    if (isPago) {
+      return (
+        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 shadow-sm">
+          <CheckCircle2 size={12} className="text-emerald-400" />
+          Contrato Fechado (Pago)
+        </span>
+      );
+    }
+
+    if (isAssinado) {
+      return (
+        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center gap-1.5 shadow-sm">
+          <Clock size={12} className="text-blue-400" />
+          Contrato Assinado (Aguardando Pagamento)
+        </span>
+      );
+    }
+
     switch (etapa) {
-      case 'fechado':
-        return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">Contrato Fechado</span>;
       case 'contrato_enviado':
-        return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">Contrato Enviado</span>;
+        return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">Contrato / Proposta Enviada</span>;
+      case 'consulta_realizada':
+        return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">Reunião Realizada</span>;
       case 'agendado':
         return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">Consulta Agendada</span>;
       case 'qualificado':
         return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-500/15 text-purple-300 border border-purple-500/30">Qualificado</span>;
       case 'contatado':
-        return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-500/15 text-blue-300 border border-blue-500/30">Contatado</span>;
+        return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-white/70 border border-white/20">Contatado</span>;
       default:
-        return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-white/70 border border-white/15">Recebido</span>;
+        return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/5 text-white/50 border border-white/10">Recebido</span>;
     }
   };
 
@@ -41,6 +82,17 @@ export default function RealLeadsModal({ isOpen, onClose, leads = [], onRefresh,
       setTimeout(() => setCopied(false), 2000);
     } catch {}
   };
+
+  const countFechados = (leads || []).filter(l => {
+    const t = (Array.isArray(l.tags) ? l.tags.join(' ') : '').toLowerCase();
+    return l.etapa_funil === 'fechado' || t.includes('pagamento') || t.includes('pago');
+  }).length;
+
+  const countAssinados = (leads || []).filter(l => {
+    const t = (Array.isArray(l.tags) ? l.tags.join(' ') : '').toLowerCase();
+    const isPago = l.etapa_funil === 'fechado' || t.includes('pagamento') || t.includes('pago');
+    return (l.etapa_funil === 'contrato_assinado' || t.includes('assinado')) && !isPago;
+  }).length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
@@ -63,13 +115,13 @@ export default function RealLeadsModal({ isOpen, onClose, leads = [], onRefresh,
             </div>
             <h3 className="text-xl sm:text-2xl font-display font-black text-white">Leads Reais da Operação Comercial</h3>
             <p className="text-xs text-white/50 mt-0.5">
-              Alimentados automaticamente via webhook a cada novo contato ou mudança de etiqueta no WhatsApp.
+              Alimentados em tempo real a cada novo contato ou mudança de etiqueta no WhatsApp.
             </p>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+            className="p-2 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
             title="Fechar"
           >
             <X size={20} />
@@ -77,7 +129,7 @@ export default function RealLeadsModal({ isOpen, onClose, leads = [], onRefresh,
         </div>
 
         {/* Toolbar: Busca e Ações */}
-        <div className="py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-white/5">
+        <div className="py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-white/5">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
             <input
@@ -89,20 +141,20 @@ export default function RealLeadsModal({ isOpen, onClose, leads = [], onRefresh,
             />
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2">
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-white/70 hover:text-white transition-all"
-              title="Copiar URL do Webhook do CRM"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-white/70 hover:text-white transition-colors cursor-pointer"
+              title="Copiar URL do Webhook para configurar no CRM"
             >
               {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-              <span>{copied ? 'URL Copiada!' : 'Copiar URL Webhook'}</span>
+              <span>{copied ? 'Copiado!' : 'Copiar Webhook'}</span>
             </button>
 
             <button
               onClick={onRefresh}
               disabled={isRefreshing}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-blue/15 hover:bg-brand-blue text-brand-blue hover:text-white border border-brand-blue/30 text-xs font-bold transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-blue/15 hover:bg-brand-blue text-brand-blue hover:text-white border border-brand-blue/30 text-xs font-bold transition-all shadow-sm cursor-pointer"
             >
               <Zap size={14} className={isRefreshing ? 'animate-spin' : ''} />
               <span>{isRefreshing ? 'Sincronizando...' : 'Atualizar'}</span>
@@ -110,11 +162,49 @@ export default function RealLeadsModal({ isOpen, onClose, leads = [], onRefresh,
           </div>
         </div>
 
+        {/* Filtros Rápidos por Etapa */}
+        <div className="py-2.5 flex items-center gap-2 overflow-x-auto scrollbar-hide border-b border-white/5 text-xs">
+          <button
+            onClick={() => setStageFilter('all')}
+            className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer shrink-0 ${
+              stageFilter === 'all' ? 'bg-white/20 text-white' : 'text-white/40 hover:text-white bg-white/5'
+            }`}
+          >
+            Todos ({leads.length})
+          </button>
+          <button
+            onClick={() => setStageFilter('fechado')}
+            className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+              stageFilter === 'fechado' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'text-white/40 hover:text-white bg-white/5'
+            }`}
+          >
+            <CheckCircle2 size={12} className="text-emerald-400" />
+            Contrato Fechado / Pago ({countFechados})
+          </button>
+          <button
+            onClick={() => setStageFilter('assinado')}
+            className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+              stageFilter === 'assinado' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/40' : 'text-white/40 hover:text-white bg-white/5'
+            }`}
+          >
+            <Clock size={12} className="text-blue-400" />
+            Contrato Assinado / Aguardando Pagamento ({countAssinados})
+          </button>
+          <button
+            onClick={() => setStageFilter('reunioes')}
+            className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer shrink-0 ${
+              stageFilter === 'reunioes' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40' : 'text-white/40 hover:text-white bg-white/5'
+            }`}
+          >
+            Reuniões & Agendados
+          </button>
+        </div>
+
         {/* Lista de Leads */}
         <div className="flex-1 overflow-y-auto py-3 space-y-2.5 pr-1 scrollbar-thin">
           {filteredLeads.length === 0 ? (
             <div className="py-12 text-center text-white/40 text-sm">
-              Nenhum lead encontrado para "{search}".
+              Nenhum lead encontrado neste filtro.
             </div>
           ) : (
             filteredLeads.map((lead, idx) => {
@@ -138,7 +228,7 @@ export default function RealLeadsModal({ isOpen, onClose, leads = [], onRefresh,
                         <h4 className="font-bold text-sm text-white truncate max-w-[280px] sm:max-w-[360px]">
                           {lead.nome || 'Lead sem nome'}
                         </h4>
-                        {getStageBadge(lead.etapa_funil)}
+                        {getStageBadge(lead.etapa_funil, lead.tags)}
                       </div>
 
                       <div className="flex items-center gap-3 mt-1 text-xs text-white/50 flex-wrap">

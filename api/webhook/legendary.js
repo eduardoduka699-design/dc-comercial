@@ -21,18 +21,57 @@ function normalizeTags(rawTags) {
   return [];
 }
 
-// Classifica a etapa do funil do lead
+// Classifica a etapa do funil do lead de acordo com as regras comerciais da assessoria:
+// - CONTRATO FECHADO: APENAS quando o lead efetua o pagamento (pagamento realizado, honorários pagos, pago, fechado, ganho)!
+// - CONTRATO ASSINADO: contrato assinado aguardando confirmação do pagamento.
 function classifyFunnelStage(tags, statusTicket, valor) {
-  const tagsStr = tags.join(' ');
+  const tagsStr = tags.join(' ').toLowerCase();
   
-  const isContratoFechado = tagsStr.includes('fechad') || tagsStr.includes('ganho') || tagsStr.includes('pago') || tagsStr.includes('honor') || tagsStr.includes('assinado');
-  const isContratoEnviado = tagsStr.includes('contrato enviado') || tagsStr.includes('proposta') || tagsStr.includes('enviad');
-  const isConsultaRealizada = tagsStr.includes('realizad') || tagsStr.includes('comparec') || tagsStr.includes('compareceu');
-  const isAgendado = tagsStr.includes('agend') || tagsStr.includes('consulta') || tagsStr.includes('reuni') || tagsStr.includes('marcad') || tagsStr.includes('atendimentos realizados');
-  const isQualificado = tagsStr.includes('qualific') || tagsStr.includes('viável') || tagsStr.includes('perfil');
-  const isContatado = tagsStr.includes('contato feito') || tagsStr.includes('contat') || tagsStr.includes('atendimento') || statusTicket === 'open';
+  // 1. Pagamento efetuado = CONTRATO FECHADO (apenas quando paga!)
+  const isPago = tagsStr.includes('pagamento') || 
+                 tagsStr.includes('pago') || 
+                 tagsStr.includes('pagou') || 
+                 tagsStr.includes('comprovante') || 
+                 tagsStr.includes('fechad') || 
+                 tagsStr.includes('ganho');
 
-  if (isContratoFechado) return 'fechado';
+  // 2. Contrato Assinado (aguardando pagamento)
+  const isAssinado = tagsStr.includes('assinado') || 
+                     tagsStr.includes('assinatura') || 
+                     tagsStr.includes('assinou');
+
+  // 3. Proposta / Contrato Enviado
+  const isContratoEnviado = tagsStr.includes('contrato enviado') || 
+                            tagsStr.includes('proposta') || 
+                            tagsStr.includes('enviad');
+
+  // 4. Reunião / Consulta Realizada
+  const isConsultaRealizada = tagsStr.includes('reuniões realizadas') ||
+                              tagsStr.includes('realizad') || 
+                              tagsStr.includes('comparec') || 
+                              tagsStr.includes('compareceu');
+
+  // 5. Consulta Agendada / Reunião Marcada
+  const isAgendado = tagsStr.includes('reuniões marcadas') ||
+                     tagsStr.includes('agend') || 
+                     tagsStr.includes('consulta') || 
+                     tagsStr.includes('marcad') || 
+                     tagsStr.includes('atendimentos realizados');
+
+  // 6. Caso Qualificado
+  const isQualificado = tagsStr.includes('qualific') || 
+                        tagsStr.includes('viável') || 
+                        tagsStr.includes('perfil');
+
+  // 7. Contatado / Atendimento em aberto
+  const isContatado = tagsStr.includes('contato feito') || 
+                      tagsStr.includes('contat') || 
+                      tagsStr.includes('atendimento') || 
+                      statusTicket === 'open' || 
+                      statusTicket === 'aberto';
+
+  if (isPago) return 'fechado';
+  if (isAssinado) return 'contrato_assinado';
   if (isContratoEnviado) return 'contrato_enviado';
   if (isConsultaRealizada) return 'consulta_realizada';
   if (isAgendado) return 'agendado';
@@ -52,31 +91,44 @@ function aggregateMetrics(leads) {
 
   let closerRealizadas = 0;
   let closerEnviados = 0;
+  let closerAssinados = 0;
   let closerFechados = 0;
   let totalHonorarios = 0;
 
   list.forEach(lead => {
     const tags = Array.isArray(lead.tags) ? lead.tags : [];
     const tagsStr = tags.join(' ').toLowerCase();
-    const etapa = lead.etapa_funil || '';
+    const etapa = (lead.etapa_funil || '').toLowerCase();
 
-    // SDR
-    const isContatado = etapa !== 'recebido' || tagsStr.includes('contat') || tagsStr.includes('atend') || lead.status_ticket === 'open';
-    const isQualificado = ['qualificado', 'agendado', 'consulta_realizada', 'contrato_enviado', 'fechado'].includes(etapa) || tagsStr.includes('qualific') || tagsStr.includes('viável');
-    const isAgendado = ['agendado', 'consulta_realizada', 'contrato_enviado', 'fechado'].includes(etapa) || tagsStr.includes('agend') || tagsStr.includes('atendimentos realizados') || tagsStr.includes('consulta');
+    // Pagamento = FECHADO (apenas quando o lead paga!)
+    const isPago = etapa === 'fechado' || 
+                   tagsStr.includes('pagamento') || 
+                   tagsStr.includes('pago') || 
+                   tagsStr.includes('pagou') || 
+                   tagsStr.includes('comprovante') || 
+                   tagsStr.includes('fechad') || 
+                   tagsStr.includes('ganho');
+
+    // Assinado (mas ainda não pago)
+    const isAssinado = etapa === 'contrato_assinado' || 
+                       tagsStr.includes('assinado') || 
+                       tagsStr.includes('assinatura') || 
+                       tagsStr.includes('assinou');
+
+    const isEnviado = isPago || isAssinado || etapa === 'contrato_enviado' || tagsStr.includes('proposta') || tagsStr.includes('contrato enviado') || tagsStr.includes('enviad');
+    const isRealizada = isEnviado || etapa === 'consulta_realizada' || tagsStr.includes('realizad') || tagsStr.includes('comparec');
+    const isAgendado = isRealizada || etapa === 'agendado' || tagsStr.includes('agend') || tagsStr.includes('reuniões marcadas') || tagsStr.includes('atendimentos realizados');
+    const isQualificado = isAgendado || etapa === 'qualificado' || tagsStr.includes('qualific') || tagsStr.includes('viável');
+    const isContatado = isQualificado || etapa !== 'recebido' || tagsStr.includes('contat') || tagsStr.includes('atend') || lead.status_ticket === 'open';
 
     if (isContatado) sdrContatados++;
     if (isQualificado) sdrQualificados++;
     if (isAgendado) sdrAgendados++;
 
-    // Closer
-    const isRealizada = ['consulta_realizada', 'contrato_enviado', 'fechado'].includes(etapa) || tagsStr.includes('realizad') || tagsStr.includes('comparec');
-    const isEnviado = ['contrato_enviado', 'fechado'].includes(etapa) || tagsStr.includes('proposta') || tagsStr.includes('contrato enviado');
-    const isFechado = etapa === 'fechado' || tagsStr.includes('fechad') || tagsStr.includes('ganho') || tagsStr.includes('assinado');
-
     if (isRealizada) closerRealizadas++;
     if (isEnviado) closerEnviados++;
-    if (isFechado) {
+    if (isAssinado && !isPago) closerAssinados++;
+    if (isPago) {
       closerFechados++;
       totalHonorarios += Number(lead.valor_honorarios || 0);
     }
@@ -84,7 +136,7 @@ function aggregateMetrics(leads) {
 
   const honorariosMedios = closerFechados > 0 && totalHonorarios > 0
     ? Math.round(totalHonorarios / closerFechados)
-    : 3500;
+    : 1517;
 
   return {
     sdr: {
@@ -102,6 +154,7 @@ function aggregateMetrics(leads) {
     closer: {
       consultasRealizadas: closerRealizadas,
       contratosEnviados: closerEnviados,
+      contratosAssinados: closerAssinados,
       contratosFechados: closerFechados,
       honorariosMedios: honorariosMedios
     },
