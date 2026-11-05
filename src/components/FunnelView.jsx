@@ -6,37 +6,93 @@ export default function FunnelView({ role, metrics, setMetrics, goals }) {
 
   const funnelConfigs = {
     sdr: {
-      title: 'Funil Lei Seca — SDR (Recepção)',
+      title: 'Funil Comercial — SDR (Recepção de Multas)',
       stages: [
-        { id: 'leadsRecebidos', label: 'Leads (Multas)', icon: Users, color: 'bg-[#f59e0b]' },
-        { id: 'motoristasContatados', label: 'Contatados (WhatsApp)', icon: Phone, color: 'bg-[#f97316]', benchmark: [60, 80], benchmarkText: '60-80% respondem' },
-        { id: 'casosQualificados', label: 'Casos Qualificados', icon: Star, color: 'bg-[#eab308]', benchmark: [30, 50], benchmarkText: '30-50% têm perfil de recurso' },
+        { 
+          id: 'leadsRecebidos', 
+          label: 'Leads Recebidos (WhatsApp)', 
+          icon: Users, 
+          color: 'bg-brand-blue',
+          tagRef: 'Entrada no WhatsApp'
+        },
+        { 
+          id: 'motoristasContatados', 
+          label: 'Atendimentos Realizados (Contato Feito)', 
+          icon: Phone, 
+          color: 'bg-[#f59e0b]', 
+          benchmark: [60, 80], 
+          benchmarkText: '60-80% respondem',
+          tagRef: 'ATENDIMENTOS REALIZADOS / CONTATO FEITO'
+        },
+        { 
+          id: 'casosQualificados', 
+          label: 'Qualificados', 
+          icon: Star, 
+          color: 'bg-[#8b5cf6]', 
+          benchmark: [30, 50], 
+          benchmarkText: '30-50% têm perfil viável',
+          tagRef: 'QUALIFICADOS - {MÊS}'
+        },
         ...(funnelType === 'com_reuniao' ? [
-          { id: 'consultasAgendadas', label: 'Consultas Agendadas', icon: Calendar, color: 'bg-[#10b981]', benchmark: [50, 70], benchmarkText: '50-70% agendam consulta' }
+          { 
+            id: 'consultasAgendadas', 
+            label: 'Reuniões Marcadas (SDR)', 
+            icon: Calendar, 
+            color: 'bg-[#10b981]', 
+            benchmark: [50, 70], 
+            benchmarkText: '50-70% agendam reunião',
+            tagRef: 'REUNIOES MARCADAS - {MÊS} (SDR)'
+          }
         ] : [])
       ]
     },
-    bdr: {
-      title: 'Funil Lei Seca — BDR (Prospecção)',
-      stages: [
-        { id: 'processosMapeados', label: 'Processos Encontrados', icon: Users, color: 'bg-[#f59e0b]' },
-        { id: 'contatosAtivos', label: 'Contatos Ativos', icon: Phone, color: 'bg-[#f97316]', benchmark: [5, 15], benchmarkText: '5-15% conectam' },
-        ...(funnelType === 'com_reuniao' ? [
-          { id: 'consultasAgendadasOut', label: 'Consultas Agendadas', icon: Calendar, color: 'bg-[#eab308]', benchmark: [10, 20], benchmarkText: '10-20% agendam consulta' }
-        ] : []),
-        { id: 'casosQualificadosOut', label: 'Casos Qualificados', icon: CheckSquare, color: 'bg-[#10b981]', benchmark: [60, 80], benchmarkText: '60-80% são viáveis' }
-      ]
-    },
     closer: {
-      title: 'Funil Lei Seca — Closer (Especialista)',
+      title: 'Funil Comercial — Closer (Especialista Jurídico)',
       stages: [
         ...(funnelType === 'com_reuniao' ? [
-          { id: 'consultasRealizadas', label: 'Consultas Realizadas', icon: Star, color: 'bg-[#f59e0b]' }
+          { 
+            id: 'consultasRealizadas', 
+            label: 'Reuniões Realizadas (SDR)', 
+            icon: Star, 
+            color: 'bg-brand-blue',
+            tagRef: 'REUNIÕES REALIZADAS {MÊS} - (SDR)'
+          }
         ] : [
-          { id: 'casosQualificados', label: 'Casos Qualificados Repassados', icon: Star, color: 'bg-[#f59e0b]' }
+          { 
+            id: 'casosQualificados', 
+            label: 'Qualificados Recebidos', 
+            icon: Star, 
+            color: 'bg-brand-blue',
+            tagRef: 'QUALIFICADOS'
+          }
         ]),
-        { id: 'contratosEnviados', label: 'Contratos Enviados', icon: FileText, color: 'bg-[#f97316]', benchmark: [funnelType === 'com_reuniao' ? 60 : 80, funnelType === 'com_reuniao' ? 75 : 95], benchmarkText: funnelType === 'com_reuniao' ? '60-75% recebem contrato' : '80-95% recebem proposta no Wpp' },
-        { id: 'contratosFechados', label: 'Contratos Fechados', icon: CheckCircle2, color: 'bg-[#10b981]', benchmark: [funnelType === 'com_reuniao' ? 20 : 10, funnelType === 'com_reuniao' ? 30 : 20], benchmarkText: funnelType === 'com_reuniao' ? '20-30% fecham honorários' : '10-20% fecham direto no Wpp' }
+        { 
+          id: 'contratosEnviados', 
+          label: 'Propostas Enviadas', 
+          icon: FileText, 
+          color: 'bg-[#f59e0b]', 
+          benchmark: [60, 80], 
+          benchmarkText: '60-80% recebem proposta',
+          tagRef: 'PROPOSTA ENVIADA - {MÊS}'
+        },
+        { 
+          id: 'contratosAssinados', 
+          label: 'Contratos Assinados (Aguardando Pagamento)', 
+          icon: CheckSquare, 
+          color: 'bg-purple-400', 
+          benchmark: [40, 60], 
+          benchmarkText: 'Aguardando compensação',
+          tagRef: 'CONTRATO ASSINADO'
+        },
+        { 
+          id: 'contratosFechados', 
+          label: 'Pagamento Realizado (Fechado)', 
+          icon: CheckCircle2, 
+          color: 'bg-[#10b981]', 
+          benchmark: [20, 35], 
+          benchmarkText: 'Honorários pagos',
+          tagRef: 'PAGAMENTO REALIZADO'
+        }
       ]
     }
   };
@@ -125,7 +181,14 @@ export default function FunnelView({ role, metrics, setMetrics, goals }) {
                 <div className="flex justify-between items-end mb-2">
                   <div className="flex items-center gap-2">
                     <Icon size={14} className={stage.color.replace('bg-', 'text-')} />
-                    <label className="text-sm font-medium text-text-main">{stage.label}</label>
+                    <div>
+                      <label className="text-sm font-medium text-text-main block">{stage.label}</label>
+                      {stage.tagRef && (
+                        <span className="text-[10px] text-text-muted/60 font-mono block">
+                          🏷️ {stage.tagRef}
+                        </span>
+                      )}
+                    </div>
                     {stageGoal !== undefined && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-blue/10 text-brand-blue font-bold border border-brand-blue/20 flex items-center gap-1">
                         <Target size={10} /> Meta: {Number(stageGoal).toLocaleString('pt-BR')}

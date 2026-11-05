@@ -3,18 +3,29 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Target, AlertCircle, CheckCircle2, TrendingUp, TrendingDown, Info, Zap } from 'lucide-react';
 
 const metricTranslations = {
-  leadsRecebidos: 'LEADS (MULTAS)',
-  motoristasContatados: 'CONTATADOS (WHATSAPP)',
-  casosQualificados: 'CASOS QUALIFICADOS',
-  consultasAgendadas: 'CONSULTAS AGENDADAS',
-  processosMapeados: 'PROCESSOS ENCONTRADOS',
-  contatosAtivos: 'CONTATOS ATIVOS',
-  consultasAgendadasOut: 'CONSULTAS AGENDADAS',
-  casosQualificadosOut: 'CASOS QUALIFICADOS',
-  consultasRealizadas: 'CONSULTAS REALIZADAS',
-  contratosEnviados: 'CONTRATOS ENVIADOS',
-  contratosFechados: 'CONTRATOS FECHADOS',
-  honorariosMedios: 'HONORÁRIOS (TICKET)'
+  leadsRecebidos: 'LEADS RECEBIDOS (WHATSAPP)',
+  motoristasContatados: 'ATENDIMENTOS / CONTATO FEITO',
+  casosQualificados: 'QUALIFICADOS',
+  consultasAgendadas: 'REUNIÕES MARCADAS (SDR)',
+  consultasRealizadas: 'REUNIÕES REALIZADAS (SDR)',
+  contratosEnviados: 'PROPOSTAS ENVIADAS',
+  contratosAssinados: 'CONTRATOS ASSINADOS',
+  contratosFechados: 'PAGAMENTO REALIZADO (FECHADO)',
+  honorariosMedios: 'HONORÁRIOS (TICKET MÉDIO)',
+  processosMapeados: 'PROCESSOS MAPEADOS',
+  contatosAtivos: 'CONTATOS ATIVOS'
+};
+
+const metricTagBadges = {
+  leadsRecebidos: 'Entrada de Leads no WhatsApp',
+  motoristasContatados: 'ATENDIMENTOS REALIZADOS / CONTATO FEITO',
+  casosQualificados: 'QUALIFICADOS - {MÊS}',
+  consultasAgendadas: 'REUNIOES MARCADAS - {MÊS} (SDR)',
+  consultasRealizadas: 'REUNIÕES REALIZADAS {MÊS} - (SDR)',
+  contratosEnviados: 'PROPOSTA ENVIADA - {MÊS}',
+  contratosAssinados: 'CONTRATO ASSINADO (Aguardando Pgto)',
+  contratosFechados: 'PAGAMENTO REALIZADO (PAGO)',
+  honorariosMedios: 'Média de Honorários Pagos'
 };
 
 const formatLabel = (key) => {
@@ -60,7 +71,7 @@ export default function Dashboard({ role, metrics, goals, chartData }) {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {Object.keys(metrics || {}).map((key) => {
           const current = Number(metrics?.[key] || 0);
           const goal = Number(goals?.[key] || 0);
@@ -72,11 +83,20 @@ export default function Dashboard({ role, metrics, goals, chartData }) {
 
           return (
             <div key={key} className="bg-bg-card p-5 rounded-2xl border border-border flex flex-col justify-between hover:border-brand-blue/50 transition-colors">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-text-muted text-[11px] font-bold tracking-widest uppercase">
-                  {formatLabel(key)}
-                </h3>
-                {Icon}
+              <div className="flex justify-between items-start mb-3 gap-2">
+                <div className="min-w-0 pr-1">
+                  <h3 className="text-text-muted text-[11px] font-bold tracking-wider uppercase leading-tight">
+                    {formatLabel(key)}
+                  </h3>
+                  {metricTagBadges[key] && (
+                    <span className="text-[10px] text-text-muted/70 font-mono mt-1 block truncate" title={`Etiqueta CRM: ${metricTagBadges[key]}`}>
+                      🏷️ {metricTagBadges[key]}
+                    </span>
+                  )}
+                </div>
+                <div className="shrink-0 mt-0.5">
+                  {Icon}
+                </div>
               </div>
 
               <div className="mb-4">

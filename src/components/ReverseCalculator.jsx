@@ -431,7 +431,7 @@ export default function ReverseCalculator({ onSaveGoals, hideNavigation }) {
           {/* 1. Leads */}
           <div className="flex-1 min-w-[110px] text-center p-3.5 bg-bg-card rounded-xl border border-brand-blue/30 shadow-sm relative group">
             <span className="block text-2xl font-extrabold text-brand-blue">{safeLeads}</span>
-            <span className="text-xs font-semibold text-text-muted mt-0.5 block">Leads Necessários</span>
+            <span className="text-xs font-semibold text-text-muted mt-0.5 block">Leads Recebidos (WhatsApp)</span>
             <span className="text-[10px] text-text-muted mt-1 block">Exato: {exactLeads.toFixed(2).replace('.', ',')}</span>
           </div>
 
@@ -440,8 +440,8 @@ export default function ReverseCalculator({ onSaveGoals, hideNavigation }) {
           {/* 2. Contatados */}
           <div className="flex-1 min-w-[110px] text-center p-3.5 bg-bg-card rounded-xl border border-border shadow-sm">
             <span className="block text-2xl font-extrabold text-text-main">{safeContatos}</span>
-            <span className="text-xs font-semibold text-text-muted mt-0.5 block">Contatados</span>
-            <span className="text-[10px] text-text-muted mt-1 block">~{contactRate}% contato</span>
+            <span className="text-xs font-semibold text-text-muted mt-0.5 block">Atendimentos Realizados (Contato Feito)</span>
+            <span className="text-[10px] text-text-muted mt-1 block">~{contactRate}% em conversa</span>
           </div>
 
           <ArrowRight className="text-text-muted shrink-0 hidden sm:block" size={16} />
@@ -452,7 +452,7 @@ export default function ReverseCalculator({ onSaveGoals, hideNavigation }) {
               {/* 3. Agendamentos */}
               <div className="flex-1 min-w-[120px] text-center p-3.5 bg-brand-blue/10 rounded-xl border border-brand-blue/40 shadow-sm">
                 <span className="block text-2xl font-extrabold text-brand-blue">{safeAgendamentos}</span>
-                <span className="text-xs font-semibold text-brand-blue/90 mt-0.5 block">Agendamentos</span>
+                <span className="text-xs font-semibold text-brand-blue/90 mt-0.5 block">Reuniões Marcadas (SDR)</span>
                 <span className="text-[10px] text-brand-blue/70 mt-1 block">Exato: {exactAgendamentos.toFixed(2).replace('.', ',')}</span>
               </div>
 
@@ -461,7 +461,7 @@ export default function ReverseCalculator({ onSaveGoals, hideNavigation }) {
               {/* 4. Realizadas */}
               <div className="flex-1 min-w-[110px] text-center p-3.5 bg-purple-500/10 rounded-xl border border-purple-500/30 shadow-sm">
                 <span className="block text-2xl font-extrabold text-purple-400">{safeRealizadas}</span>
-                <span className="text-xs font-semibold text-purple-300 mt-0.5 block">Reuniões Realizadas</span>
+                <span className="text-xs font-semibold text-purple-300 mt-0.5 block">Reuniões Realizadas (SDR)</span>
                 <span className="text-[10px] text-purple-300/70 mt-1 block">~{showUpRate}% presença</span>
               </div>
             </>
@@ -481,7 +481,7 @@ export default function ReverseCalculator({ onSaveGoals, hideNavigation }) {
           {/* 5. Vendas Fechadas */}
           <div className="flex-1 min-w-[120px] text-center p-3.5 bg-[#10b981]/15 rounded-xl border border-[#10b981]/40 shadow-sm">
             <span className="block text-2xl font-extrabold text-[#10b981]">{safeSales}</span>
-            <span className="text-xs font-semibold text-[#10b981] mt-0.5 block">Contratos Fechados</span>
+            <span className="text-xs font-semibold text-[#10b981] mt-0.5 block">Pagamento Realizado (Fechado)</span>
             <span className="text-[10px] text-[#10b981]/80 mt-1 block">Exato: {exactSales.toFixed(2).replace('.', ',')}</span>
           </div>
         </div>
@@ -525,7 +525,7 @@ export default function ReverseCalculator({ onSaveGoals, hideNavigation }) {
               </div>
 
               <div className="p-3 bg-bg-card/80 rounded-xl border border-border">
-                <span className="font-bold text-text-muted uppercase text-[10px] tracking-wider block mb-1">3. Leads Necessários</span>
+                <span className="font-bold text-text-muted uppercase text-[10px] tracking-wider block mb-1">3. Leads Recebidos (WhatsApp)</span>
                 <p className="text-base font-extrabold text-[#10b981]">
                   {exactLeads.toFixed(2).replace('.', ',')} leads
                 </p>

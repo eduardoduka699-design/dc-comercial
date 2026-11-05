@@ -14,6 +14,7 @@ export const defaultGoals = {
   closer: {
     consultasRealizadas: 45, // Meetings done
     contratosEnviados: 35, // Proposals
+    contratosAssinados: 20, // Signed awaiting payment
     contratosFechados: 15, // Won
     honorariosMedios: 3500 // Ticket Medio
   }
@@ -36,6 +37,7 @@ export const baseMetrics = {
   closer: {
     consultasRealizadas: 38,
     contratosEnviados: 28,
+    contratosAssinados: 15,
     contratosFechados: 10,
     honorariosMedios: 3200
   }

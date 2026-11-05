@@ -2,18 +2,17 @@ import React from 'react';
 import { Target, TrendingUp, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 const metricTranslations = {
-  leadsRecebidos: 'LEADS (MULTAS)',
-  motoristasContatados: 'CONTATADOS (WHATSAPP)',
-  casosQualificados: 'CASOS QUALIFICADOS',
-  consultasAgendadas: 'CONSULTAS AGENDADAS',
-  processosMapeados: 'PROCESSOS ENCONTRADOS',
-  contatosAtivos: 'CONTATOS ATIVOS',
-  consultasAgendadasOut: 'CONSULTAS AGENDADAS',
-  casosQualificadosOut: 'CASOS QUALIFICADOS',
-  consultasRealizadas: 'CONSULTAS REALIZADAS',
-  contratosEnviados: 'CONTRATOS ENVIADOS',
-  contratosFechados: 'CONTRATOS FECHADOS',
-  honorariosMedios: 'HONORÁRIOS (TICKET)'
+  leadsRecebidos: 'LEADS RECEBIDOS (WHATSAPP)',
+  motoristasContatados: 'ATENDIMENTOS / CONTATO FEITO',
+  casosQualificados: 'QUALIFICADOS',
+  consultasAgendadas: 'REUNIÕES MARCADAS (SDR)',
+  consultasRealizadas: 'REUNIÕES REALIZADAS (SDR)',
+  contratosEnviados: 'PROPOSTAS ENVIADAS',
+  contratosAssinados: 'CONTRATOS ASSINADOS',
+  contratosFechados: 'PAGAMENTO REALIZADO (FECHADO)',
+  honorariosMedios: 'HONORÁRIOS (TICKET MÉDIO)',
+  processosMapeados: 'PROCESSOS MAPEADOS',
+  contatosAtivos: 'CONTATOS ATIVOS'
 };
 
 export default function Projection({ role, metrics, goals }) {
