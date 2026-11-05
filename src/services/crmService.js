@@ -101,39 +101,78 @@ export const crmService = {
     leads.forEach(lead => {
       const tags = Array.isArray(lead.tags) ? lead.tags : [];
       const tagsStr = tags.join(' ').toLowerCase();
-      const etapa = (lead.etapa_funil || '').toLowerCase();
+      const statusTicket = (lead.status_ticket || '').toLowerCase();
 
-      // Pagamento = FECHADO (apenas quando o lead paga!)
-      const isPago = etapa === 'fechado' || 
-                     tagsStr.includes('pagamento') || 
+      // 1. Pagamento Realizado = FECHADO
+      const isPago = tagsStr.includes('pagamento') || 
                      tagsStr.includes('pago') || 
                      tagsStr.includes('pagou') || 
                      tagsStr.includes('comprovante') || 
                      tagsStr.includes('fechad') || 
                      tagsStr.includes('ganho');
 
-      // Assinado (aguardando pagamento)
-      const isAssinado = etapa === 'contrato_assinado' || 
-                         tagsStr.includes('assinado') || 
+      // 2. Contrato Assinado (aguardando pagamento)
+      const isAssinado = tagsStr.includes('assinado') || 
                          tagsStr.includes('assinatura') || 
                          tagsStr.includes('assinou');
 
-      const isEnviado = isPago || isAssinado || etapa === 'contrato_enviado' || tagsStr.includes('proposta') || tagsStr.includes('contrato enviado') || tagsStr.includes('enviad');
-      const isRealizada = isEnviado || etapa === 'consulta_realizada' || tagsStr.includes('realizad') || tagsStr.includes('comparec');
-      const isAgendado = isRealizada || etapa === 'agendado' || tagsStr.includes('agend') || tagsStr.includes('reuniões marcadas') || tagsStr.includes('atendimentos realizados');
-      const isQualificado = isAgendado || etapa === 'qualificado' || tagsStr.includes('qualific') || tagsStr.includes('viável');
-      const isContatado = isQualificado || etapa !== 'recebido' || tagsStr.includes('contat') || tagsStr.includes('atend') || lead.status_ticket === 'open';
+      // 3. Proposta Enviada
+      const isProposta = tagsStr.includes('proposta') || 
+                         tagsStr.includes('contrato enviado');
 
-      if (isContatado) sdrContatados++;
-      if (isQualificado) sdrQualificados++;
-      if (isAgendado) sdrAgendados++;
+      // 4. Reuniões Realizadas
+      const isReuniaoRealizada = tagsStr.includes('reuniões realizadas') ||
+                                tagsStr.includes('reunioes realizadas') ||
+                                tagsStr.includes('reunião realizada') ||
+                                tagsStr.includes('reuniao realizada') ||
+                                tagsStr.includes('compareceu') ||
+                                tagsStr.includes('comparecimento');
 
-      if (isRealizada) closerRealizadas++;
-      if (isEnviado) closerEnviados++;
-      if (isAssinado && !isPago) closerAssinados++;
+      // 5. Reuniões Marcadas (SDR)
+      const isReuniaoMarcada = tagsStr.includes('reuniões marcadas') ||
+                               tagsStr.includes('reunioes marcadas') ||
+                               tagsStr.includes('reunião marcada') ||
+                               tagsStr.includes('reuniao marcada') ||
+                               tagsStr.includes('agendad');
+
+      // 6. Qualificados
+      const isQualificado = (tagsStr.includes('qualific') || 
+                             tagsStr.includes('viável') || 
+                             tagsStr.includes('viavel') || 
+                             tagsStr.includes('perfil')) && 
+                            !tagsStr.includes('desqualific');
+
+      // 7. Contatados / Atendimentos Realizados (SDR) / Contato Feito / Follow-up
+      const isContatado = tagsStr.includes('atendimento') || 
+                          tagsStr.includes('contato') || 
+                          tagsStr.includes('follow') || 
+                          statusTicket === 'open' || 
+                          statusTicket === 'aberto';
+
+      // Closer
       if (isPago) {
         closerFechados++;
         totalHonorarios += Number(lead.valor_honorarios || 0);
+      }
+      if (isAssinado && !isPago) {
+        closerAssinados++;
+      }
+      if (isProposta || isAssinado || isPago) {
+        closerEnviados++;
+      }
+      if (isReuniaoRealizada || isProposta || isAssinado || isPago) {
+        closerRealizadas++;
+      }
+
+      // SDR
+      if (isReuniaoMarcada || isReuniaoRealizada || isProposta || isAssinado || isPago) {
+        sdrAgendados++;
+      }
+      if (isQualificado || isReuniaoMarcada || isReuniaoRealizada || isProposta || isAssinado || isPago) {
+        sdrQualificados++;
+      }
+      if (isContatado || isQualificado || isReuniaoMarcada || isReuniaoRealizada || isProposta || isAssinado || isPago) {
+        sdrContatados++;
       }
     });
 
@@ -147,12 +186,6 @@ export const crmService = {
         motoristasContatados: sdrContatados,
         casosQualificados: sdrQualificados,
         consultasAgendadas: sdrAgendados
-      },
-      bdr: {
-        processosMapeados: Math.max(0, sdrRecebidos * 2),
-        contatosAtivos: Math.max(0, sdrContatados),
-        consultasAgendadasOut: Math.max(0, Math.floor(sdrAgendados * 0.3)),
-        casosQualificadosOut: Math.max(0, Math.floor(sdrQualificados * 0.3))
       },
       closer: {
         consultasRealizadas: closerRealizadas,
