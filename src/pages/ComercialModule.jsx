@@ -55,7 +55,23 @@ export default function ComercialModule({ currentUser }) {
   });
 
   const [showLeadsModal, setShowLeadsModal] = useState(false);
+  const [modalStageFilter, setModalStageFilter] = useState('all');
   const [syncingCrm, setSyncingCrm] = useState(false);
+  const [chartViewMode, setChartViewMode] = useState('day'); // 'day' | 'week'
+
+  // Sincroniza a classe dark no elemento raiz HTML para tema consistente
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
+  const handleStageCardClick = (stageKey) => {
+    setModalStageFilter(stageKey || 'all');
+    setShowLeadsModal(true);
+  };
 
   // Inicializa escuta e sincronização em tempo real com o CRM
   useEffect(() => {
@@ -504,7 +520,16 @@ export default function ComercialModule({ currentUser }) {
             {/* Dynamic Content based on activeMenu */}
             {activeMenu === 'dashboard' && (
               <div className="space-y-12">
-                <Dashboard role={activeTab} metrics={filteredMetrics} goals={goals[activeTab]} chartData={getDynamicChartData()} />
+                <Dashboard 
+                    role={activeTab} 
+                    metrics={filteredMetrics} 
+                    goals={goals[activeTab]} 
+                    chartData={getDynamicChartData()} 
+                    onCardClick={handleStageCardClick}
+                    chartViewMode={chartViewMode}
+                    setChartViewMode={setChartViewMode}
+                    isDarkMode={isDarkMode}
+                  />
                 <Projection role={activeTab} metrics={filteredMetrics} goals={goals[activeTab]} />
               </div>
             )}
@@ -531,6 +556,7 @@ export default function ComercialModule({ currentUser }) {
         leads={crmLeads}
         onRefresh={handleManualCrmSync}
         isRefreshing={syncingCrm}
+        initialStage={modalStageFilter}
       />
     </div>
   );
