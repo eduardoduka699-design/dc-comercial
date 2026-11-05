@@ -187,7 +187,7 @@ export default async function handler(req, res) {
           .from('crm_leads')
           .select('*')
           .order('updated_at', { ascending: false })
-          .limit(100);
+          .limit(10000);
 
         if (!error && Array.isArray(data) && data.length > 0) {
           leads = data;
@@ -261,7 +261,7 @@ export default async function handler(req, res) {
       globalThis.__recentLeads[existingIndex] = processedLead;
     } else {
       globalThis.__recentLeads.unshift(processedLead);
-      if (globalThis.__recentLeads.length > 100) globalThis.__recentLeads.pop();
+      if (globalThis.__recentLeads.length > 5000) globalThis.__recentLeads.pop();
     }
 
     // Salva no Supabase de forma persistente

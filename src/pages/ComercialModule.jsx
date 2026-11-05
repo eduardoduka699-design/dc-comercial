@@ -16,7 +16,10 @@ import { crmService } from '../services/crmService';
 export default function ComercialModule({ currentUser }) {
   const navigate = useNavigate();
   const [activeMenu, setActiveMenu] = useState('dashboard');
-  const [activeTab, setActiveTab] = useState('sdr');
+  const [activeTab, setActiveTab] = useState(() => {
+    const saved = localStorage.getItem('dc-comercial-active-tab');
+    return saved === 'closer' ? 'closer' : 'sdr';
+  });
   const [dateFilter, setDateFilter] = useState('Mês'); 
   const [customDate, setCustomDate] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -167,11 +170,55 @@ export default function ComercialModule({ currentUser }) {
   };
 
   const getFilteredMetrics = () => {
+    const funnelType = localStorage.getItem('dc-leiseca-funnel-type') || 'com_reuniao';
+
+    // Se temos leads reais do CRM, calcula as métricas com filtro real por data
+    if (crmLeads && crmLeads.length > 0) {
+      const now = new Date();
+      const todayStr = now.toISOString().slice(0, 10);
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      const filteredLeads = crmLeads.filter(lead => {
+        const leadDateStr = lead.created_at || lead.updated_at;
+        if (!leadDateStr) return true;
+        const d = new Date(leadDateStr);
+
+        if (customDate) {
+          return leadDateStr.startsWith(customDate);
+        }
+        if (dateFilter === 'Hoje') {
+          return leadDateStr.startsWith(todayStr);
+        }
+        if (dateFilter === 'Semana') {
+          return d >= sevenDaysAgo;
+        }
+        if (dateFilter === 'Mês') {
+          return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        }
+        return true;
+      });
+
+      const liveMetrics = crmService.calculateMetricsFromLeads(filteredLeads);
+      if (liveMetrics && liveMetrics[activeTab]) {
+        const current = liveMetrics[activeTab];
+        const newMetrics = {};
+        Object.keys(current).forEach(k => {
+          if (funnelType === 'sem_reuniao' && (k === 'consultasAgendadas' || k === 'consultasRealizadas')) {
+            return;
+          }
+          newMetrics[k] = current[k];
+        });
+        return newMetrics;
+      }
+    }
+
+    // Fallback proporcional
     let multiplier = 1;
     if (dateFilter === 'Hoje') multiplier = 0.05; 
     if (dateFilter === 'Semana') multiplier = 0.25; 
     if (customDate) {
-      // Gera variação consistente baseada no dia específico
       let hash = 0;
       for (let i = 0; i < customDate.length; i++) {
         hash = (hash << 5) - hash + customDate.charCodeAt(i);
@@ -181,7 +228,6 @@ export default function ComercialModule({ currentUser }) {
       multiplier = Math.max(0.03, 0.05 + variance);
     }
     
-    const funnelType = localStorage.getItem('dc-leiseca-funnel-type') || 'com_reuniao';
     const adjusted = { ...metrics };
     const current = adjusted[activeTab] || {};
     const newMetrics = {};
@@ -282,7 +328,6 @@ export default function ComercialModule({ currentUser }) {
 
   const roleTabs = [
     { id: 'sdr', label: 'SDR (Recepção de Multas)' },
-    { id: 'bdr', label: 'BDR (Prospecção Ativa)' },
     { id: 'closer', label: 'Closer (Especialista Jurídico)' },
   ];
 
@@ -442,7 +487,7 @@ export default function ComercialModule({ currentUser }) {
             {roleTabs.map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => { setActiveTab(tab.id); localStorage.setItem('dc-comercial-active-tab', tab.id); }}
                 className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm shrink-0 transition-colors ${
                   activeTab === tab.id 
                     ? 'bg-brand-blue text-white font-medium shadow-md shadow-brand-blue/20' 

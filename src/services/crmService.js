@@ -19,7 +19,7 @@ export const crmService = {
           .from('crm_leads')
           .select('*')
           .order('updated_at', { ascending: false })
-          .limit(100);
+          .limit(10000);
 
         if (!error && Array.isArray(data) && data.length > 0) {
           leads = data;
