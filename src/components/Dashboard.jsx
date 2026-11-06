@@ -404,46 +404,82 @@ export default function Dashboard({
           </div>
         </div>
         
-        <div className="h-80 w-full">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-80 w-full min-h-[320px]">
+          <ResponsiveContainer width="100%" height={320}>
             {isCloser ? (
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart data={chartData && chartData.length > 0 ? chartData : []} margin={{ top: 15, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#22232e" vertical={false} />
                 <XAxis dataKey="name" stroke="#6b7280" tick={{fill: '#9ca3af', fontSize: 12}} axisLine={false} tickLine={false} />
-                <YAxis stroke="#6b7280" tick={{fill: '#9ca3af', fontSize: 12}} axisLine={false} tickLine={false} />
+                <YAxis stroke="#6b7280" tick={{fill: '#9ca3af', fontSize: 12}} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#121319', 
-                    border: '1px solid rgba(255,255,255,0.15)', 
-                    borderRadius: '14px', 
-                    color: '#ffffff',
-                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)'
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const dataItem = payload[0]?.payload || {};
+                      return (
+                        <div className="bg-[#121319] border border-white/20 p-3.5 rounded-2xl shadow-2xl text-xs space-y-1.5 min-w-[200px]">
+                          <p className="font-bold text-white text-sm pb-1 border-b border-white/10 flex items-center justify-between">
+                            <span>{label}</span>
+                            {dataItem.date && <span className="text-[10px] text-white/40 font-mono">{dataItem.date}</span>}
+                          </p>
+                          {payload.map((entry, idx) => (
+                            <div key={`tip-${idx}`} className="flex items-center justify-between gap-3">
+                              <span className="flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                                <span className="text-white/80">{entry.name}:</span>
+                              </span>
+                              <span className="font-bold text-white font-mono">{entry.value}</span>
+                            </div>
+                          ))}
+                          {dataItem.faturamento > 0 && (
+                            <div className="pt-1.5 mt-1 border-t border-white/10 flex items-center justify-between text-emerald-400 font-bold">
+                              <span>Faturamento:</span>
+                              <span className="font-mono">
+                                {Number(dataItem.faturamento).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                    return null;
                   }}
-                  itemStyle={{ color: '#ffffff', fontSize: '12px' }}
                   cursor={{fill: 'rgba(255,255,255,0.04)'}}
                 />
                 <Legend 
                   wrapperStyle={{ paddingTop: '16px', fontSize: '12px' }}
                 />
-                <Bar dataKey="fechados" name="Pagamento Realizado (Pago)" fill="#10b981" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="assinados" name="Contratos Assinados" fill="#f59e0b" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="propostas" name="Propostas Enviadas" fill="#818cf8" radius={[6, 6, 0, 0]} />
                 <Bar dataKey="realizadas" name="Reuniões Realizadas" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="propostas" name="Propostas Enviadas" fill="#818cf8" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="assinados" name="Contratos Assinados" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="fechados" name="Pagamento Realizado (Pago)" fill="#10b981" radius={[6, 6, 0, 0]} />
               </BarChart>
             ) : (
-              <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <LineChart data={chartData && chartData.length > 0 ? chartData : []} margin={{ top: 15, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#22232e" vertical={false} />
                 <XAxis dataKey="name" stroke="#6b7280" tick={{fill: '#9ca3af', fontSize: 12}} axisLine={false} tickLine={false} />
-                <YAxis stroke="#6b7280" tick={{fill: '#9ca3af', fontSize: 12}} axisLine={false} tickLine={false} />
+                <YAxis stroke="#6b7280" tick={{fill: '#9ca3af', fontSize: 12}} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#121319', 
-                    border: '1px solid rgba(255,255,255,0.15)', 
-                    borderRadius: '14px', 
-                    color: '#ffffff',
-                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)'
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="bg-[#121319] border border-white/20 p-3.5 rounded-2xl shadow-2xl text-xs space-y-1.5 min-w-[190px]">
+                          <p className="font-bold text-white text-sm pb-1 border-b border-white/10">
+                            {label}
+                          </p>
+                          {payload.map((entry, idx) => (
+                            <div key={`tip-sdr-${idx}`} className="flex items-center justify-between gap-3">
+                              <span className="flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                                <span className="text-white/80">{entry.name}:</span>
+                              </span>
+                              <span className="font-bold text-white font-mono">{entry.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                    return null;
                   }}
-                  itemStyle={{ color: '#ffffff', fontSize: '12px' }}
                 />
                 <Legend 
                   wrapperStyle={{ paddingTop: '16px', fontSize: '12px' }}

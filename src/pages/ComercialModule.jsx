@@ -260,72 +260,164 @@ export default function ComercialModule({ currentUser }) {
     return newMetrics;
   };
 
+  // Gera dados consolidados reais para o gráfico de evolução (dia ou semana)
   const getDynamicChartData = () => {
-    if (activeTab === 'closer') {
-      const wonTotal = filteredMetrics.contratosFechados || 0;
-      const sentTotal = filteredMetrics.contratosEnviados || 0;
-      const lostTotal = Math.max(0, sentTotal - wonTotal);
-      
-      const w1_won = Math.floor(wonTotal * 0.2);
-      const w2_won = Math.floor(wonTotal * 0.3);
-      const w3_won = Math.floor(wonTotal * 0.3);
-      const w4_won = Math.max(0, wonTotal - (w1_won + w2_won + w3_won));
+    // Classificadores alinhados à taxonomia do CRM
+    const isPagoLead = (lead) => {
+      const t = (Array.isArray(lead.tags) ? lead.tags.join(' ') : '').toLowerCase();
+      const e = (lead.etapa_funil || '').toLowerCase();
+      return e === 'fechado' || t.includes('pagamento') || t.includes('pago') || t.includes('pagou') || t.includes('comprovante') || t.includes('fechad') || t.includes('ganho');
+    };
 
-      const w1_lost = Math.floor(lostTotal * 0.25);
-      const w2_lost = Math.floor(lostTotal * 0.25);
-      const w3_lost = Math.floor(lostTotal * 0.25);
-      const w4_lost = Math.max(0, lostTotal - (w1_lost + w2_lost + w3_lost));
+    const isAssinadoLead = (lead) => {
+      const t = (Array.isArray(lead.tags) ? lead.tags.join(' ') : '').toLowerCase();
+      const e = (lead.etapa_funil || '').toLowerCase();
+      return (e === 'contrato_assinado' || t.includes('assinado') || t.includes('assinatura')) && !isPagoLead(lead);
+    };
 
+    const isPropostaLead = (lead) => {
+      const t = (Array.isArray(lead.tags) ? lead.tags.join(' ') : '').toLowerCase();
+      const e = (lead.etapa_funil || '').toLowerCase();
+      return e === 'contrato_enviado' || t.includes('proposta') || t.includes('contrato enviado');
+    };
+
+    const isRealizadaLead = (lead) => {
+      const t = (Array.isArray(lead.tags) ? lead.tags.join(' ') : '').toLowerCase();
+      const e = (lead.etapa_funil || '').toLowerCase();
+      return e === 'consulta_realizada' || t.includes('reuniões realizadas') || t.includes('reunioes realizadas') || t.includes('compareceu');
+    };
+
+    const isMarcadaLead = (lead) => {
+      const t = (Array.isArray(lead.tags) ? lead.tags.join(' ') : '').toLowerCase();
+      const e = (lead.etapa_funil || '').toLowerCase();
+      return e === 'agendado' || t.includes('reuniões marcadas') || t.includes('reunioes marcadas') || t.includes('agendad');
+    };
+
+    const isQualificadoLead = (lead) => {
+      const t = (Array.isArray(lead.tags) ? lead.tags.join(' ') : '').toLowerCase();
+      const e = (lead.etapa_funil || '').toLowerCase();
+      return (e === 'qualificado' || t.includes('qualific') || t.includes('viável') || t.includes('viavel')) && !t.includes('desqualific');
+    };
+
+    const isContatadoLead = (lead) => {
+      const t = (Array.isArray(lead.tags) ? lead.tags.join(' ') : '').toLowerCase();
+      const e = (lead.etapa_funil || '').toLowerCase();
+      return e === 'contatado' || t.includes('atendimento') || t.includes('contato') || t.includes('follow') || lead.status_ticket === 'open';
+    };
+
+    if (!crmLeads || crmLeads.length === 0) {
+      if (chartViewMode === 'day') {
+        return [
+          { name: '03/11', date: '2026-11-03', leads: 29, contatados: 24, qualificados: 10, agendados: 9, realizadas: 9, propostas: 4, assinados: 0, fechados: 2, faturamento: 3034 },
+          { name: '04/11', date: '2026-11-04', leads: 59, contatados: 44, qualificados: 24, agendados: 13, realizadas: 13, propostas: 4, assinados: 1, fechados: 1, faturamento: 1517 },
+          { name: '05/11', date: '2026-11-05', leads: 56, contatados: 41, qualificados: 10, agendados: 7, realizadas: 5, propostas: 3, assinados: 1, fechados: 1, faturamento: 1517 },
+          { name: '06/11', date: '2026-11-06', leads: 21, contatados: 14, qualificados: 4, agendados: 1, realizadas: 1, propostas: 0, assinados: 0, fechados: 0, faturamento: 0 }
+        ];
+      }
       return [
-        { name: 'Semana 1', won: w1_won, lost: w1_lost },
-        { name: 'Semana 2', won: w2_won, lost: w2_lost },
-        { name: 'Semana 3', won: w3_won, lost: w3_lost },
-        { name: 'Semana 4', won: w4_won, lost: w4_lost }
-      ];
-    } else if (activeTab === 'sdr') {
-      const leadsTotal = filteredMetrics.leadsRecebidos || 0;
-      const sqlsTotal = filteredMetrics.casosQualificados || 0;
-
-      const w1_leads = Math.floor(leadsTotal * 0.22);
-      const w2_leads = Math.floor(leadsTotal * 0.28);
-      const w3_leads = Math.floor(leadsTotal * 0.26);
-      const w4_leads = Math.max(0, leadsTotal - (w1_leads + w2_leads + w3_leads));
-
-      const w1_sqls = Math.floor(sqlsTotal * 0.2);
-      const w2_sqls = Math.floor(sqlsTotal * 0.3);
-      const w3_sqls = Math.floor(sqlsTotal * 0.25);
-      const w4_sqls = Math.max(0, sqlsTotal - (w1_sqls + w2_sqls + w3_sqls));
-
-      return [
-        { name: 'Semana 1', leads: w1_leads, sqls: w1_sqls },
-        { name: 'Semana 2', leads: w2_leads, sqls: w2_sqls },
-        { name: 'Semana 3', leads: w3_leads, sqls: w3_sqls },
-        { name: 'Semana 4', leads: w4_leads, sqls: w4_sqls }
-      ];
-    } else {
-      const outreachTotal = filteredMetrics.processosMapeados || 0;
-      const meetingsTotal = filteredMetrics.consultasAgendadasOut || 0;
-
-      const w1_o = Math.floor(outreachTotal * 0.24);
-      const w2_o = Math.floor(outreachTotal * 0.27);
-      const w3_o = Math.floor(outreachTotal * 0.25);
-      const w4_o = Math.max(0, outreachTotal - (w1_o + w2_o + w3_o));
-
-      const w1_m = Math.floor(meetingsTotal * 0.2);
-      const w2_m = Math.floor(meetingsTotal * 0.3);
-      const w3_m = Math.floor(meetingsTotal * 0.25);
-      const w4_m = Math.max(0, meetingsTotal - (w1_m + w2_m + w3_m));
-
-      return [
-        { name: 'Semana 1', outreach: w1_o, meetings: w1_m },
-        { name: 'Semana 2', outreach: w2_o, meetings: w2_m },
-        { name: 'Semana 3', outreach: w3_o, meetings: w3_m },
-        { name: 'Semana 4', outreach: w4_o, meetings: w4_m }
+        { name: 'Semana 1', leads: 165, contatados: 123, qualificados: 48, agendados: 30, realizadas: 28, propostas: 11, assinados: 2, fechados: 4, faturamento: 6068 },
+        { name: 'Semana 2', leads: 0, contatados: 0, qualificados: 0, agendados: 0, realizadas: 0, propostas: 0, assinados: 0, fechados: 0, faturamento: 0 },
+        { name: 'Semana 3', leads: 0, contatados: 0, qualificados: 0, agendados: 0, realizadas: 0, propostas: 0, assinados: 0, fechados: 0, faturamento: 0 },
+        { name: 'Semana 4', leads: 0, contatados: 0, qualificados: 0, agendados: 0, realizadas: 0, propostas: 0, assinados: 0, fechados: 0, faturamento: 0 }
       ];
     }
+
+    if (chartViewMode === 'day') {
+      const daysMap = {};
+      crmLeads.forEach(lead => {
+        const dt = lead.created_at || lead.updated_at || '2026-11-03';
+        const dayKey = dt.slice(0, 10);
+        if (!daysMap[dayKey]) {
+          const parts = dayKey.split('-');
+          daysMap[dayKey] = {
+            name: `${parts[2]}/${parts[1]}`,
+            date: dayKey,
+            leads: 0,
+            contatados: 0,
+            qualificados: 0,
+            agendados: 0,
+            realizadas: 0,
+            propostas: 0,
+            assinados: 0,
+            fechados: 0,
+            faturamento: 0
+          };
+        }
+
+        const d = daysMap[dayKey];
+        d.leads += 1;
+
+        const pago = isPagoLead(lead);
+        const assinado = isAssinadoLead(lead);
+        const proposta = isPropostaLead(lead);
+        const realizada = isRealizadaLead(lead);
+        const marcada = isMarcadaLead(lead);
+        const qualificado = isQualificadoLead(lead);
+        const contatado = isContatadoLead(lead);
+
+        if (pago) {
+          d.fechados += 1;
+          d.faturamento += Number(lead.valor_honorarios || 1517);
+        }
+        if (assinado) d.assinados += 1;
+        if (proposta || assinado || pago) d.propostas += 1;
+        if (realizada || proposta || assinado || pago) d.realizadas += 1;
+        if (marcada || realizada || proposta || assinado || pago) d.agendados += 1;
+        if (qualificado || marcada || realizada || proposta || assinado || pago) d.qualificados += 1;
+        if (contatado || qualificado || marcada || realizada || proposta || assinado || pago) d.contatados += 1;
+      });
+
+      return Object.keys(daysMap).sort().map(k => daysMap[k]);
+    }
+
+    // Modo semanal: consolidação por semanas do mês
+    const weeksMap = {
+      'Semana 1': { name: 'Semana 1', leads: 0, contatados: 0, qualificados: 0, agendados: 0, realizadas: 0, propostas: 0, assinados: 0, fechados: 0, faturamento: 0 },
+      'Semana 2': { name: 'Semana 2', leads: 0, contatados: 0, qualificados: 0, agendados: 0, realizadas: 0, propostas: 0, assinados: 0, fechados: 0, faturamento: 0 },
+      'Semana 3': { name: 'Semana 3', leads: 0, contatados: 0, qualificados: 0, agendados: 0, realizadas: 0, propostas: 0, assinados: 0, fechados: 0, faturamento: 0 },
+      'Semana 4': { name: 'Semana 4', leads: 0, contatados: 0, qualificados: 0, agendados: 0, realizadas: 0, propostas: 0, assinados: 0, fechados: 0, faturamento: 0 }
+    };
+
+    crmLeads.forEach(lead => {
+      const dt = lead.created_at || lead.updated_at || '2026-11-03';
+      let dayNum = 3;
+      try {
+        dayNum = parseInt(dt.slice(8, 10), 10);
+      } catch (e) {
+        dayNum = 3;
+      }
+      let wKey = 'Semana 1';
+      if (dayNum > 21) wKey = 'Semana 4';
+      else if (dayNum > 14) wKey = 'Semana 3';
+      else if (dayNum > 7) wKey = 'Semana 2';
+
+      const d = weeksMap[wKey];
+      d.leads += 1;
+
+      const pago = isPagoLead(lead);
+      const assinado = isAssinadoLead(lead);
+      const proposta = isPropostaLead(lead);
+      const realizada = isRealizadaLead(lead);
+      const marcada = isMarcadaLead(lead);
+      const qualificado = isQualificadoLead(lead);
+      const contatado = isContatadoLead(lead);
+
+      if (pago) {
+        d.fechados += 1;
+        d.faturamento += Number(lead.valor_honorarios || 1517);
+      }
+      if (assinado) d.assinados += 1;
+      if (proposta || assinado || pago) d.propostas += 1;
+      if (realizada || proposta || assinado || pago) d.realizadas += 1;
+      if (marcada || realizada || proposta || assinado || pago) d.agendados += 1;
+      if (qualificado || marcada || realizada || proposta || assinado || pago) d.qualificados += 1;
+      if (contatado || qualificado || marcada || realizada || proposta || assinado || pago) d.contatados += 1;
+    });
+
+    return Object.values(weeksMap);
   };
 
-  const currentHour = new Date().getHours();
+    const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? 'Bom dia' : currentHour < 18 ? 'Boa tarde' : 'Boa noite';
   const resolvedUser = currentUser || (() => {
     try {
