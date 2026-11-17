@@ -4,6 +4,7 @@ import { X, Search, Phone, ExternalLink, Zap, Clock, ShieldCheck, CheckCircle2, 
 export default function RealLeadsModal({ isOpen, onClose, leads = [], onRefresh, isRefreshing, initialStage = 'all' }) {
   const [search, setSearch] = useState('');
   const [stageFilter, setStageFilter] = useState(initialStage || 'all');
+  const [sourceMode, setSourceMode] = useState('traffic'); // 'traffic' | 'all'
   const [copied, setCopied] = useState(false);
   const webhookUrl = 'https://dc-comercial.vercel.app/api/webhook/legendary';
 
@@ -15,6 +16,24 @@ export default function RealLeadsModal({ isOpen, onClose, leads = [], onRefresh,
   }, [isOpen, initialStage]);
 
   if (!isOpen) return null;
+
+  // Identifica lead de Tráfego Pago oficial do mês corrente (Novembro)
+  const isTrafficLead = (lead) => {
+    if (!lead) return false;
+    const tags = Array.isArray(lead.tags) ? lead.tags.map(t => String(t).toLowerCase().trim()) : [];
+    const tagsStr = tags.join(' ');
+    if (tagsStr.includes('indica') || tagsStr.includes('organico') || tagsStr.includes('ôrganico')) return false;
+    const otherMonths = ['julho', 'agosto', 'setembro', 'outubro', 'dezembro', 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho'];
+    const hasOther = otherMonths.some(m => tagsStr.includes(m));
+    const hasTarget = tagsStr.includes('novembro');
+    if (hasOther && !hasTarget) return false;
+    if (hasTarget) return true;
+    const funnelKeywords = ['atendimento', 'contato', 'qualific', 'reuni', 'agend', 'proposta', 'contrato', 'pagamento', 'pago', 'fechad', 'ganho'];
+    return tags.some(t => funnelKeywords.some(k => t.includes(k)));
+  };
+
+  const trafficLeadsList = leads.filter(isTrafficLead);
+  const activeLeads = sourceMode === 'traffic' ? trafficLeadsList : leads;
 
   // Classificadores auxiliares
   const isPagoLead = (lead) => {
@@ -60,16 +79,16 @@ export default function RealLeadsModal({ isOpen, onClose, leads = [], onRefresh,
   };
 
   // Contagens para os botões de filtro
-  const countFechados = leads.filter(isPagoLead).length;
-  const countAssinados = leads.filter(isAssinadoLead).length;
-  const countPropostas = leads.filter(l => isPropostaLead(l) || isAssinadoLead(l) || isPagoLead(l)).length;
-  const countRealizadas = leads.filter(l => isRealizadaLead(l) || isPropostaLead(l) || isAssinadoLead(l) || isPagoLead(l)).length;
-  const countMarcadas = leads.filter(l => isMarcadaLead(l) || isRealizadaLead(l) || isPropostaLead(l) || isAssinadoLead(l) || isPagoLead(l)).length;
-  const countQualificados = leads.filter(l => isQualificadoLead(l) || isMarcadaLead(l) || isRealizadaLead(l) || isPropostaLead(l) || isAssinadoLead(l) || isPagoLead(l)).length;
-  const countContatados = leads.filter(l => isContatadoLead(l) || isQualificadoLead(l) || isMarcadaLead(l) || isRealizadaLead(l) || isPropostaLead(l) || isAssinadoLead(l) || isPagoLead(l)).length;
+  const countFechados = activeLeads.filter(isPagoLead).length;
+  const countAssinados = activeLeads.filter(isAssinadoLead).length;
+  const countPropostas = activeLeads.filter(l => isPropostaLead(l) || isAssinadoLead(l) || isPagoLead(l)).length;
+  const countRealizadas = activeLeads.filter(l => isRealizadaLead(l) || isPropostaLead(l) || isAssinadoLead(l) || isPagoLead(l)).length;
+  const countMarcadas = activeLeads.filter(l => isMarcadaLead(l) || isRealizadaLead(l) || isPropostaLead(l) || isAssinadoLead(l) || isPagoLead(l)).length;
+  const countQualificados = activeLeads.filter(l => isQualificadoLead(l) || isMarcadaLead(l) || isRealizadaLead(l) || isPropostaLead(l) || isAssinadoLead(l) || isPagoLead(l)).length;
+  const countContatados = activeLeads.filter(l => isContatadoLead(l) || isQualificadoLead(l) || isMarcadaLead(l) || isRealizadaLead(l) || isPropostaLead(l) || isAssinadoLead(l) || isPagoLead(l)).length;
 
   // Filtragem dos leads
-  const filteredLeads = leads.filter(lead => {
+  const filteredLeads = activeLeads.filter(lead => {
     const q = search.toLowerCase();
     const nome = (lead.nome || '').toLowerCase();
     const tel = (lead.telefone || '').toLowerCase();
@@ -256,6 +275,43 @@ export default function RealLeadsModal({ isOpen, onClose, leads = [], onRefresh,
           </div>
         </div>
 
+        {/* Seletor de Base: Tráfego Pago do Mês vs Todos os Contatos */}
+        <div className="py-2.5 px-3 bg-white/5 rounded-2xl my-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border border-white/10 text-xs">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-white/50">Base:</span>
+            <div className="flex items-center bg-[#0a0a0d] border border-white/10 rounded-xl p-0.5 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setSourceMode('traffic')}
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  sourceMode === 'traffic'
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm font-extrabold'
+                    : 'text-white/50 hover:text-white'
+                }`}
+              >
+                <span>🎯 Tráfego Novembro ({trafficLeadsList.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSourceMode('all')}
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  sourceMode === 'all'
+                    ? 'bg-white/20 text-white border border-white/30 shadow-sm font-extrabold'
+                    : 'text-white/50 hover:text-white'
+                }`}
+              >
+                <span>🌐 Todos os Contatos ({leads.length})</span>
+              </button>
+            </div>
+          </div>
+
+          <span className="text-[11px] text-white/40">
+            {sourceMode === 'traffic' 
+              ? 'Exibindo leads oficiais de campanhas pagas de Novembro' 
+              : 'Exibindo todos os contatos (meses anteriores e indicações)'}
+          </span>
+        </div>
+
         {/* Filtros Rápidos por Todas as Etapas do Funil */}
         <div className="py-2.5 flex items-center gap-1.5 overflow-x-auto scrollbar-hide border-b border-white/10 text-xs">
           <button
@@ -264,7 +320,7 @@ export default function RealLeadsModal({ isOpen, onClose, leads = [], onRefresh,
               stageFilter === 'all' ? 'bg-white/20 text-white shadow-sm' : 'text-white/50 hover:text-white bg-white/5'
             }`}
           >
-            Todos ({leads.length})
+            Todos ({activeLeads.length})
           </button>
           
           <button

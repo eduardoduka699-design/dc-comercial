@@ -189,6 +189,7 @@ export default function ComercialModule({ currentUser }) {
     const funnelType = localStorage.getItem('dc-leiseca-funnel-type') || 'com_reuniao';
 
     // Se temos leads reais do CRM, calcula as métricas com filtro real por data
+    // garantindo estritamente Tráfego Pago do mês corrente (sem indicações/contatos pessoais)
     if (crmLeads && crmLeads.length > 0) {
       const now = new Date();
       const todayStr = now.toISOString().slice(0, 10);
@@ -196,7 +197,10 @@ export default function ComercialModule({ currentUser }) {
       const currentMonth = now.getMonth();
       const currentYear = now.getFullYear();
 
-      const filteredLeads = crmLeads.filter(lead => {
+      // Filtro estrito de Tráfego Pago oficial de Novembro
+      const trafficLeads = crmLeads.filter(lead => crmService.isTrafficLead(lead));
+
+      const filteredLeads = trafficLeads.filter(lead => {
         const leadDateStr = lead.created_at || lead.updated_at;
         if (!leadDateStr) return true;
         const d = new Date(leadDateStr);
@@ -216,7 +220,7 @@ export default function ComercialModule({ currentUser }) {
         return true;
       });
 
-      const liveMetrics = crmService.calculateMetricsFromLeads(filteredLeads);
+      const liveMetrics = crmService.calculateMetricsFromLeads(filteredLeads, false);
       if (liveMetrics && liveMetrics[activeTab]) {
         const current = liveMetrics[activeTab];
         const newMetrics = {};
@@ -305,7 +309,10 @@ export default function ComercialModule({ currentUser }) {
       return e === 'contatado' || t.includes('atendimento') || t.includes('contato') || t.includes('follow') || lead.status_ticket === 'open';
     };
 
-    if (!crmLeads || crmLeads.length === 0) {
+    // Filtra estritamente Tráfego Pago do mês corrente (Novembro)
+    const activeLeads = (crmLeads || []).filter(lead => crmService.isTrafficLead(lead));
+
+    if (!activeLeads || activeLeads.length === 0) {
       if (chartViewMode === 'day') {
         return [
           { name: '03/11', date: '2026-11-03', leads: 29, contatados: 24, qualificados: 10, agendados: 9, realizadas: 9, propostas: 4, assinados: 0, fechados: 2, faturamento: 3034 },
@@ -324,7 +331,7 @@ export default function ComercialModule({ currentUser }) {
 
     if (chartViewMode === 'day') {
       const daysMap = {};
-      crmLeads.forEach(lead => {
+      activeLeads.forEach(lead => {
         const dt = lead.created_at || lead.updated_at || '2026-11-03';
         const dayKey = dt.slice(0, 10);
         if (!daysMap[dayKey]) {
@@ -378,11 +385,12 @@ export default function ComercialModule({ currentUser }) {
       'Semana 4': { name: 'Semana 4', leads: 0, contatados: 0, qualificados: 0, agendados: 0, realizadas: 0, propostas: 0, assinados: 0, fechados: 0, faturamento: 0 }
     };
 
-    crmLeads.forEach(lead => {
+    activeLeads.forEach(lead => {
       const dt = lead.created_at || lead.updated_at || '2026-11-03';
       let dayNum = 3;
       try {
-        dayNum = parseInt(dt.slice(8, 10), 10);
+        const parts = dt.slice(0, 10).split('-');
+        dayNum = parseInt(parts[2], 10) || 3;
       } catch (e) {
         dayNum = 3;
       }
@@ -554,13 +562,13 @@ export default function ComercialModule({ currentUser }) {
                 type="button"
                 onClick={() => setShowLeadsModal(true)}
                 className="flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-bold transition-all shadow-sm cursor-pointer"
-                title="Clique para ver os leads reais recebidos do CRM"
+                title="Clique para ver os leads reais de tráfego recebidos do CRM"
               >
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
-                <span>CRM Conectado ({crmLeads.length || crmStatus.totalLeads || 2} leads)</span>
+                <span>Tráfego Novembro ({crmLeads.filter(l => crmService.isTrafficLead(l)).length} leads)</span>
               </button>
 
               {/* Botão Sincronizar CRM */}

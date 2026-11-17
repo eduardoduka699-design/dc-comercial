@@ -156,8 +156,17 @@ export default function MarketingModule() {
     const realizadas = Number(row.reunioesRealizadas) || 0;
     const vnds = Number(row.vendas) || 0;
     
-    // CPL = Investimento / Leads
-    const cpl = lds > 0 ? inv / lds : 0;
+    // CPL: Se o usuário informou um CPL manual (ex: custo isolado da campanha de conversão,
+    // já que o investimento total engloba outras campanhas de branding/remarketing), respeita o manual.
+    // Caso contrário, calcula automaticamente: Investimento / Leads.
+    let cpl = 0;
+    if (row.cplManual !== undefined && row.cplManual !== null && Number(row.cplManual) > 0) {
+      cpl = Number(row.cplManual);
+    } else if (lds > 0 && inv > 0) {
+      cpl = inv / lds;
+    } else if (Number(row.cpl) > 0) {
+      cpl = Number(row.cpl);
+    }
 
     // Taxa de Agendamento = Reuniões Marcadas / Leads
     const taxaAgendamento = (lds > 0 && marcadas > 0) ? (marcadas / lds) * 100 : null;
@@ -194,6 +203,7 @@ export default function MarketingModule() {
       investimento: inv,
       leads: lds,
       cpl,
+      cplManual: (row.cplManual && Number(row.cplManual) > 0) ? Number(row.cplManual) : null,
       reunioesMarcadas: marcadas,
       taxaAgendamento,
       reunioesRealizadas: realizadas,
@@ -241,7 +251,9 @@ export default function MarketingModule() {
   const totalVendas = mesesComDados.reduce((acc, r) => acc + r.vendas, 0);
   const totalFaturamento = mesesComDados.reduce((acc, r) => acc + r.valorVendas, 0);
 
-  const cplMedioGeral = totalLeads > 0 ? totalInvestimento / totalLeads : 0;
+  const cplMedioGeral = totalLeads > 0 
+    ? mesesComDados.reduce((acc, r) => acc + ((r.cpl || 0) * (r.leads || 0)), 0) / totalLeads 
+    : (totalInvestimento > 0 && totalLeads > 0 ? totalInvestimento / totalLeads : 0);
   const cacMedioGeral = totalVendas > 0 ? totalInvestimento / totalVendas : 0;
   const tkmMedioGeral = totalVendas > 0 ? totalFaturamento / totalVendas : 0;
   const roasMedioGeral = totalInvestimento > 0 ? totalFaturamento / totalInvestimento : 0;
@@ -254,9 +266,9 @@ export default function MarketingModule() {
     'mes',
     'investimento',
     'leads',
+    'cpl',
     'reunioesMarcadas',
     'reunioesRealizadas',
-    'comparecimentosNota',
     'vendas',
     'tkm',
     'valorVendas'
@@ -286,12 +298,15 @@ export default function MarketingModule() {
   const getFieldRawValue = (row, field) => {
     if (field === 'investimento') return row.investimento > 0 ? String(row.investimento) : '';
     if (field === 'leads') return row.leads > 0 ? String(row.leads) : '';
+    if (field === 'cpl') {
+      const val = (row.cplManual > 0) ? row.cplManual : (row.cpl > 0 ? row.cpl : 0);
+      return val > 0 ? String(typeof val === 'number' ? Number(val.toFixed(2)) : val) : '';
+    }
     if (field === 'reunioesMarcadas') return row.reunioesMarcadas > 0 ? String(row.reunioesMarcadas) : '';
     if (field === 'reunioesRealizadas') return row.reunioesRealizadas > 0 ? String(row.reunioesRealizadas) : '';
     if (field === 'vendas') return row.vendas > 0 ? String(row.vendas) : '';
     if (field === 'tkm') return row.tkm > 0 ? String(row.tkm) : '';
     if (field === 'valorVendas') return row.valorVendas > 0 ? String(row.valorVendas) : '';
-    if (field === 'comparecimentosNota') return row.comparecimentosNota === '-' ? '' : (row.comparecimentosNota || '');
     return row[field] || '';
   };
 
@@ -308,20 +323,29 @@ export default function MarketingModule() {
       if (row.id !== rowId) return row;
 
       let updatedValue;
-      if (field === 'num' || field === 'mes' || field === 'comparecimentosNota') {
+      if (field === 'num' || field === 'mes') {
         updatedValue = String(rawValue || '').trim();
-        if (field === 'comparecimentosNota' && !updatedValue) {
-          updatedValue = '-';
-        }
       } else if (field === 'leads' || field === 'reunioesMarcadas' || field === 'reunioesRealizadas' || field === 'vendas') {
         updatedValue = parseUserInt(rawValue);
-      } else if (field === 'investimento' || field === 'tkm' || field === 'valorVendas') {
+      } else if (field === 'investimento' || field === 'tkm' || field === 'valorVendas' || field === 'cpl') {
         updatedValue = parseUserFloat(rawValue);
       } else {
         updatedValue = rawValue;
       }
 
       const updatedRow = { ...row, [field]: updatedValue };
+
+      // Se editou CPL diretamente, define como CPL manual para isolar da conta geral
+      if (field === 'cpl') {
+        const parsed = parseUserFloat(rawValue);
+        if (parsed > 0) {
+          updatedRow.cplManual = parsed;
+          updatedRow.cpl = parsed;
+        } else {
+          updatedRow.cplManual = null;
+          updatedRow.cpl = updatedRow.leads > 0 ? updatedRow.investimento / updatedRow.leads : 0;
+        }
+      }
 
       // Sincronização inteligente de vendas, tkm e faturamento
       if (field === 'vendas') {
@@ -533,7 +557,7 @@ export default function MarketingModule() {
     const headers = [
       'Nº do Mês', 'Mês', 'Investimento', 'Leads Gerados', 'CPL',
       'Reuniões marcadas', 'Taxa de agendamento', 'Reuniões realizadas',
-      'Taxa de comparecimento', 'Comparecimentos', 'Taxa de venda',
+      'Taxa de comparecimento', 'Taxa de venda',
       'Vendas', 'CAC', 'TKM', 'Valor de Vendas', 'ROAS'
     ];
 
@@ -547,8 +571,7 @@ export default function MarketingModule() {
       r.taxaAgendamento ? `${r.taxaAgendamento.toFixed(2)}%` : '',
       r.reunioesRealizadas || '',
       r.taxaComparecimento ? `${r.taxaComparecimento.toFixed(2)}%` : '',
-      r.comparecimentosNota || '-',
-      r.taxaVenda ? `${r.taxaVenda.toFixed(2)}%` : '',
+            r.taxaVenda ? `${r.taxaVenda.toFixed(2)}%` : '',
       r.vendas,
       r.cac.toFixed(2),
       r.tkm.toFixed(2),
@@ -807,8 +830,7 @@ export default function MarketingModule() {
                     <th className="py-3 px-3">Taxa de agendamento</th>
                     <th className="py-3 px-3">Reuniões realizadas</th>
                     <th className="py-3 px-3">Taxa de comparecimento</th>
-                    <th className="py-3 px-3">Comparecimentos</th>
-                    <th className="py-3 px-3">Taxa de venda</th>
+                                        <th className="py-3 px-3">Taxa de venda</th>
                     <th className="py-3 px-3 bg-[#10b981]/20 text-[#10b981]">Vendas</th>
                     <th className="py-3 px-3">CAC</th>
                     <th className="py-3 px-3">TKM</th>
@@ -871,12 +893,25 @@ export default function MarketingModule() {
                           inputWidth: 'w-20'
                         })}
 
-                        {/* 5. CPL (Calculado) */}
-                        {renderCalculatedCell({
+                        {/* 5. CPL (Editável com suporte a valor real da campanha de conversão) */}
+                        {renderEditableCell({
                           row,
-                          displayContent: row.cpl > 0 ? formatBRL(row.cpl) : '-',
-                          className: 'font-bold text-purple-300 bg-purple-500/5',
-                          formulaTitle: 'CPL = Investimento ÷ Leads'
+                          field: 'cpl',
+                          displayContent: (
+                            <div className="flex items-center justify-center gap-1.5">
+                              <span>{row.cpl > 0 ? formatBRL(row.cpl) : '-'}</span>
+                              {row.cplManual > 0 && (
+                                <span className="text-[9px] px-1 py-0.2 rounded bg-purple-500/20 text-purple-300 font-mono font-normal border border-purple-500/30" title="CPL customizado manualmente para a campanha de conversão">
+                                  conv.
+                                </span>
+                              )}
+                            </div>
+                          ),
+                          className: `font-bold text-purple-300 ${row.cplManual > 0 ? 'bg-purple-500/15 ring-1 ring-purple-500/30' : 'bg-purple-500/5'}`,
+                          title: row.cplManual > 0
+                            ? 'CPL manual da campanha de conversão (Dê 2 cliques para alterar. Deixe vazio para voltar ao automático)'
+                            : 'CPL calculado (Investimento ÷ Leads). Dê 2 cliques para definir o CPL real da campanha de conversão',
+                          inputWidth: 'w-24'
                         })}
 
                         {/* 6. Reuniões marcadas (Editável) */}
@@ -913,16 +948,6 @@ export default function MarketingModule() {
                           displayContent: row.taxaComparecimento !== null ? `${row.taxaComparecimento.toFixed(2)}%` : '-',
                           className: 'font-medium text-emerald-300',
                           formulaTitle: 'Taxa de Comparecimento = Reuniões Realizadas ÷ Reuniões Marcadas'
-                        })}
-
-                        {/* 10. Comparecimentos (Nota - Editável) */}
-                        {renderEditableCell({
-                          row,
-                          field: 'comparecimentosNota',
-                          displayContent: row.comparecimentosNota || '-',
-                          className: 'text-white/40',
-                          title: 'Dê 2 cliques para editar observações de comparecimento',
-                          inputWidth: 'w-24'
                         })}
 
                         {/* 11. Taxa de venda (Calculado) */}
@@ -1032,8 +1057,7 @@ export default function MarketingModule() {
                     <td className="py-4 px-3 text-emerald-300">
                       {taxaComparecimentoGeral > 0 ? `${taxaComparecimentoGeral.toFixed(2)}%` : '-'}
                     </td>
-                    <td className="py-4 px-3 text-white/30">-</td>
-                    <td className="py-4 px-3 text-emerald-400 font-extrabold">
+                                        <td className="py-4 px-3 text-emerald-400 font-extrabold">
                       {taxaVendaGeral > 0 ? `${Math.round(taxaVendaGeral)}%` : '-'}
                     </td>
                     <td className="py-4 px-3 text-[#10b981] font-black bg-[#10b981]/20 text-sm">
@@ -1207,11 +1231,14 @@ export default function MarketingModule() {
               </div>
 
               <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/20 space-y-3">
-                <p className="text-xs font-bold text-brand-blue uppercase tracking-wider">Tráfego & Leads</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-brand-blue uppercase tracking-wider">Tráfego & Leads</p>
+                  <span className="text-[10px] text-white/50">CPL pode ser customizado para a campanha de conversão</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="text-[11px] font-bold text-white/60 uppercase tracking-wider mb-1.5 block">
-                      Investimento em Anúncios (R$)
+                      Investimento Total (R$)
                     </label>
                     <input
                       type="number"
@@ -1219,20 +1246,45 @@ export default function MarketingModule() {
                       min="0"
                       value={editingRow.investimento}
                       onChange={e => setEditingRow({ ...editingRow, investimento: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-blue-300 font-bold focus:outline-none focus:border-brand-blue text-base"
+                      className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-3 py-2.5 text-blue-300 font-bold focus:outline-none focus:border-brand-blue text-sm"
+                      placeholder="Gasto total"
                     />
                   </div>
 
                   <div>
                     <label className="text-[11px] font-bold text-white/60 uppercase tracking-wider mb-1.5 block">
-                      Leads Gerados (Contatos)
+                      Leads Gerados
                     </label>
                     <input
                       type="number"
                       min="0"
                       value={editingRow.leads}
                       onChange={e => setEditingRow({ ...editingRow, leads: parseInt(e.target.value, 10) || 0 })}
-                      className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-brand-blue font-bold focus:outline-none focus:border-brand-blue text-base"
+                      className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-3 py-2.5 text-brand-blue font-bold focus:outline-none focus:border-brand-blue text-sm"
+                      placeholder="Qtd leads"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-purple-300 uppercase tracking-wider mb-1.5 block">
+                      CPL Conversão (R$)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={editingRow.cplManual !== undefined && editingRow.cplManual !== null ? editingRow.cplManual : (editingRow.cpl > 0 ? Number(editingRow.cpl.toFixed(2)) : '')}
+                      onChange={e => {
+                        const val = parseFloat(e.target.value);
+                        setEditingRow({ 
+                          ...editingRow, 
+                          cplManual: !isNaN(val) && val > 0 ? val : null,
+                          cpl: !isNaN(val) && val > 0 ? val : (editingRow.leads > 0 ? editingRow.investimento / editingRow.leads : 0)
+                        });
+                      }}
+                      className="w-full bg-[#0a0a0a] border border-purple-500/30 rounded-xl px-3 py-2.5 text-purple-300 font-bold focus:outline-none focus:border-purple-400 text-sm"
+                      placeholder="Auto ou CPL real"
+                      title="Deixe vazio para cálculo automático (Investimento ÷ Leads) ou digite o CPL real da campanha de conversão"
                     />
                   </div>
                 </div>

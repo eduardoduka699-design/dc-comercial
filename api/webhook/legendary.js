@@ -91,9 +91,44 @@ function classifyFunnelStage(tags, statusTicket, valor) {
   return 'recebido';
 }
 
-// Agrega métricas reais para a Gestão Comercial
-function aggregateMetrics(leads) {
-  const list = Array.isArray(leads) ? leads : [];
+// Identifica se um lead pertence estritamente ao Tráfego Pago oficial da assessoria (Lei Seca)
+function isTrafficLead(lead, targetMonth = 'novembro') {
+  if (!lead) return false;
+  const tags = Array.isArray(lead.tags) ? lead.tags.map(t => String(t).toLowerCase().trim()) : [];
+  const tagsStr = tags.join(' ');
+
+  // 1. Bloqueia indicações e orgânicos
+  if (tagsStr.includes('indica') || tagsStr.includes('organico') || tagsStr.includes('ôrganico')) {
+    return false;
+  }
+
+  // 2. Bloqueia contatos de outros meses quando não tiverem a tag do mês corrente
+  const otherMonths = ['julho', 'agosto', 'setembro', 'outubro', 'dezembro', 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho'];
+  const hasOtherMonth = otherMonths.some(m => tagsStr.includes(m));
+  const hasTargetMonth = tagsStr.includes(targetMonth.toLowerCase());
+
+  if (hasOtherMonth && !hasTargetMonth) {
+    return false;
+  }
+
+  if (hasTargetMonth) return true;
+
+  // Fallback para leads do funil de Lei Seca
+  const funnelKeywords = ['atendimento', 'contato', 'qualific', 'reuni', 'agend', 'proposta', 'contrato', 'pagamento', 'pago', 'fechad', 'ganho'];
+  const hasFunnel = tags.some(t => funnelKeywords.some(k => t.includes(k)));
+  if (!hasFunnel) return false;
+
+  const dtStr = lead.created_at || lead.updated_at;
+  if (!dtStr) return false;
+  const leadDate = new Date(dtStr);
+  const now = new Date();
+  return leadDate.getMonth() === now.getMonth() && leadDate.getFullYear() === now.getFullYear();
+}
+
+// Agrega métricas reais para a Gestão Comercial (filtrando estritamente Tráfego Pago)
+function aggregateMetrics(leads, filterTraffic = true) {
+  const rawList = Array.isArray(leads) ? leads : [];
+  const list = filterTraffic ? rawList.filter(l => isTrafficLead(l, 'novembro')) : rawList;
   
   let sdrRecebidos = list.length;
   let sdrContatados = 0;

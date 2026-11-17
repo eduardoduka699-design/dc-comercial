@@ -79,15 +79,82 @@ export const crmService = {
     };
   },
 
+  getCurrentMonthName() {
+    const monthNames = [
+      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+    ];
+    return monthNames[new Date().getMonth()];
+  },
+
+  /**
+   * Identifica se um lead pertence estritamente ao Tráfego Pago oficial da assessoria (Lei Seca)
+   * no mês corrente (ex: novembro), eliminando contatos pessoais, indicações e meses passados.
+   */
+  isTrafficLead(lead, targetMonth = null) {
+    if (!lead) return false;
+    const monthName = (targetMonth || this.getCurrentMonthName()).toLowerCase();
+    const tags = Array.isArray(lead.tags) ? lead.tags.map(t => String(t).toLowerCase().trim()) : [];
+    const tagsStr = tags.join(' ');
+
+    // 1. Bloqueia indicações e orgânicos
+    if (tagsStr.includes('indica') || tagsStr.includes('organico') || tagsStr.includes('ôrganico')) {
+      return false;
+    }
+
+    // 2. Bloqueia contatos que pertencem explicitamente a outros meses
+    const allMonths = ['julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro', 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho'];
+    const otherMonths = allMonths.filter(m => m !== monthName);
+    const hasOtherMonth = otherMonths.some(m => tagsStr.includes(m));
+    const hasTargetMonth = tagsStr.includes(monthName);
+
+    if (hasOtherMonth && !hasTargetMonth) {
+      return false;
+    }
+
+    // 3. Regra oficial: deve conter a tag do mês corrente
+    if (hasTargetMonth) {
+      return true;
+    }
+
+    // Fallback caso não tenha a palavra do mês na tag, mas tenha tag de funil de Lei Seca
+    const funnelKeywords = [
+      'atendimento', 'contato', 'qualific', 'reuni', 'agend', 
+      'proposta', 'contrato', 'pagamento', 'pago', 'fechad', 'ganho'
+    ];
+    const hasFunnelTag = tags.some(t => funnelKeywords.some(k => t.includes(k)));
+    if (!hasFunnelTag) return false;
+
+    const dtStr = lead.created_at || lead.updated_at;
+    if (!dtStr) return false;
+    const leadDate = new Date(dtStr);
+    const now = new Date();
+    return leadDate.getMonth() === now.getMonth() && leadDate.getFullYear() === now.getFullYear();
+  },
+
   /**
    * Transforma a lista de leads reais nas métricas da Gestão Comercial
+   * filtrando estritamente Tráfego Pago do mês corrente.
    */
-  calculateMetricsFromLeads(leads) {
+  calculateMetricsFromLeads(leads, filterTraffic = true, targetMonth = null) {
     if (!Array.isArray(leads) || leads.length === 0) {
       return null;
     }
 
-    let sdrRecebidos = leads.length;
+    const month = targetMonth || this.getCurrentMonthName();
+    const list = filterTraffic
+      ? leads.filter(l => this.isTrafficLead(l, month))
+      : leads;
+
+    if (list.length === 0) {
+      return {
+        sdr: { leadsRecebidos: 0, motoristasContatados: 0, casosQualificados: 0, consultasAgendadas: 0 },
+        closer: { consultasRealizadas: 0, contratosEnviados: 0, contratosAssinados: 0, contratosFechados: 0, honorariosMedios: 1517 },
+        totalHonorarios: 0
+      };
+    }
+
+    let sdrRecebidos = list.length;
     let sdrContatados = 0;
     let sdrQualificados = 0;
     let sdrAgendados = 0;
@@ -98,7 +165,7 @@ export const crmService = {
     let closerFechados = 0;
     let totalHonorarios = 0;
 
-    leads.forEach(lead => {
+    list.forEach(lead => {
       const tags = Array.isArray(lead.tags) ? lead.tags : [];
       const tagsStr = tags.join(' ').toLowerCase();
       const statusTicket = (lead.status_ticket || '').toLowerCase();
@@ -112,9 +179,9 @@ export const crmService = {
                      tagsStr.includes('ganho');
 
       // 2. Contrato Assinado (aguardando pagamento)
-      const isAssinado = tagsStr.includes('assinado') || 
+      const isAssinado = (tagsStr.includes('assinado') || 
                          tagsStr.includes('assinatura') || 
-                         tagsStr.includes('assinou');
+                         tagsStr.includes('assinou')) && !isPago;
 
       // 3. Proposta Enviada
       const isProposta = tagsStr.includes('proposta') || 

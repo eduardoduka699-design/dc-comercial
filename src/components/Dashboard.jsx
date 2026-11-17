@@ -405,9 +405,9 @@ export default function Dashboard({
         </div>
         
         <div className="h-80 w-full min-h-[320px]">
-          <ResponsiveContainer width="100%" height={320}>
+          <ResponsiveContainer key={`rc-${role}-${chartViewMode}`} width="100%" height={320}>
             {isCloser ? (
-              <BarChart data={chartData && chartData.length > 0 ? chartData : []} margin={{ top: 15, right: 10, left: -20, bottom: 0 }}>
+              <BarChart key={`bc-${chartViewMode}`} data={chartData && chartData.length > 0 ? chartData : []} margin={{ top: 15, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#22232e" vertical={false} />
                 <XAxis dataKey="name" stroke="#6b7280" tick={{fill: '#9ca3af', fontSize: 12}} axisLine={false} tickLine={false} />
                 <YAxis stroke="#6b7280" tick={{fill: '#9ca3af', fontSize: 12}} axisLine={false} tickLine={false} allowDecimals={false} />
@@ -448,13 +448,13 @@ export default function Dashboard({
                 <Legend 
                   wrapperStyle={{ paddingTop: '16px', fontSize: '12px' }}
                 />
-                <Bar dataKey="realizadas" name="Reuniões Realizadas" fill="#3b82f6" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="propostas" name="Propostas Enviadas" fill="#818cf8" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="assinados" name="Contratos Assinados" fill="#f59e0b" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="fechados" name="Pagamento Realizado (Pago)" fill="#10b981" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="realizadas" name="Reuniões Realizadas" fill="#3b82f6" radius={[6, 6, 0, 0]} minPointSize={3} />
+                <Bar dataKey="propostas" name="Propostas Enviadas" fill="#818cf8" radius={[6, 6, 0, 0]} minPointSize={3} />
+                <Bar dataKey="assinados" name="Contratos Assinados" fill="#f59e0b" radius={[6, 6, 0, 0]} minPointSize={3} />
+                <Bar dataKey="fechados" name="Pagamento Realizado (Pago)" fill="#10b981" radius={[6, 6, 0, 0]} minPointSize={3} />
               </BarChart>
             ) : (
-              <LineChart data={chartData && chartData.length > 0 ? chartData : []} margin={{ top: 15, right: 10, left: -20, bottom: 0 }}>
+              <LineChart key={`lc-${chartViewMode}`} data={chartData && chartData.length > 0 ? chartData : []} margin={{ top: 15, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#22232e" vertical={false} />
                 <XAxis dataKey="name" stroke="#6b7280" tick={{fill: '#9ca3af', fontSize: 12}} axisLine={false} tickLine={false} />
                 <YAxis stroke="#6b7280" tick={{fill: '#9ca3af', fontSize: 12}} axisLine={false} tickLine={false} allowDecimals={false} />
