@@ -1,6 +1,12 @@
-import React from 'react';
-import { ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  ArrowLeft, ExternalLink, Folder, Play, Plus, Calendar, Clock, 
+  User, HardDrive, Video, RefreshCw, Sparkles, BookOpen, Headphones, GraduationCap 
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { trainingService, DRIVE_FOLDER_URL } from '../services/trainingService';
+import CallsPlayerModal from '../components/CallsPlayerModal';
+import AddCallModal from '../components/AddCallModal';
 
 const playbookHtml = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -955,7 +961,32 @@ const playbookHtml = `<!DOCTYPE html>
 
 export default function ProcessualModule() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = React.useState('playbook');
+  const [activeTab, setActiveTab] = useState('calls');
+  const [calls, setCalls] = useState([]);
+  const [selectedCall, setSelectedCall] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const loadCalls = async () => {
+    setLoading(true);
+    try {
+      const data = await trainingService.getCalls();
+      setCalls(data || []);
+    } catch (err) {
+      console.error('Erro ao carregar chamadas:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCalls();
+  }, []);
+
+  const handleSaveNewCall = async (callData) => {
+    const saved = await trainingService.addCall(callData);
+    setCalls(prev => [saved, ...prev]);
+  };
 
   return (
     <div className="flex flex-col h-screen bg-[#0a0a0a]">
@@ -1005,48 +1036,245 @@ export default function ProcessualModule() {
           )}
 
           {activeTab === 'calls' && (
-            <div className="p-8 max-w-5xl mx-auto animate-in fade-in">
-              <h2 className="text-2xl font-display font-bold text-white mb-2">Calls Gravadas</h2>
-              <p className="text-white/50 mb-8">Análise de ligações reais para calibração de discurso.</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="bg-[#151515] border border-white/10 rounded-2xl p-4 hover:border-brand-blue/30 transition-all cursor-pointer group">
-                    <div className="aspect-video bg-[#0a0a0a] rounded-lg mb-4 flex items-center justify-center border border-white/5 relative overflow-hidden">
-                      <div className="w-12 h-12 rounded-full bg-brand-blue/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <div className="w-0 h-0 border-t-8 border-t-transparent border-l-[12px] border-l-brand-blue border-b-8 border-b-transparent ml-1"></div>
+            <div className="p-4 sm:p-8 max-w-6xl mx-auto animate-in fade-in space-y-6">
+              {/* Banner do Google Drive */}
+              <div className="bg-gradient-to-r from-blue-950/40 via-[#12131a] to-emerald-950/30 border border-brand-blue/30 rounded-3xl p-5 sm:p-7 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-80 h-80 bg-brand-blue/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 relative z-10">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-brand-blue/20 text-brand-blue border border-brand-blue/40">
+                        <Folder size={13} />
+                        Pasta Oficial no Google Drive
+                      </span>
+                      <span className="text-xs text-white/50 font-medium">• {calls.length} gravação(ões) cadastrada(s)</span>
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-display font-black text-white">
+                      Calls Gravadas da Assessoria
+                    </h2>
+                    <p className="text-xs sm:text-sm text-white/60 mt-1 max-w-2xl leading-relaxed">
+                      Repositório oficial de reuniões comerciais reais de Lei Seca. Assista diretamente pela plataforma para calibração de discurso, postura de closer e condução de fechamento de contratos.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+                    <a
+                      href={DRIVE_FOLDER_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-brand-blue hover:bg-blue-600 text-white text-xs font-bold transition-all shadow-lg shadow-brand-blue/20 cursor-pointer"
+                    >
+                      <Folder size={15} />
+                      <span>Acessar no Google Drive</span>
+                      <ExternalLink size={13} />
+                    </a>
+
+                    <button
+                      onClick={() => setShowAddModal(true)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-white/10 hover:bg-white/15 text-white border border-white/10 text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      <Plus size={15} />
+                      <span>Vincular Nova Call</span>
+                    </button>
+
+                    <button
+                      onClick={loadCalls}
+                      title="Atualizar lista"
+                      className="p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors cursor-pointer"
+                    >
+                      <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grid de Vídeos / Gravações de Call */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-white/70 flex items-center gap-2">
+                    <Headphones size={16} className="text-brand-blue" />
+                    Gravações Disponíveis para Estudo
+                  </h3>
+                  <span className="text-xs text-white/40 font-mono">
+                    Clique no card para assistir na plataforma
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {calls.map((call) => (
+                    <div
+                      key={call.id}
+                      onClick={() => setSelectedCall(call)}
+                      className="bg-[#121319] hover:bg-[#161822] border border-white/10 hover:border-brand-blue/50 rounded-2xl p-4 shadow-xl transition-all duration-200 hover:-translate-y-1 cursor-pointer group flex flex-col justify-between"
+                    >
+                      <div>
+                        {/* Thumbnail com Overlay de Play */}
+                        <div className="aspect-video bg-black/60 rounded-xl mb-3.5 flex items-center justify-center border border-white/5 relative overflow-hidden group-hover:border-brand-blue/40 transition-colors">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20"></div>
+                          
+                          {/* Play Button */}
+                          <div className="w-13 h-13 rounded-full bg-brand-blue/90 group-hover:bg-brand-blue flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform relative z-10">
+                            <Play size={22} className="text-white fill-white ml-1" />
+                          </div>
+
+                          {/* Badge de Data / Tamanho */}
+                          <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-[10px] text-white/70 z-10 font-mono">
+                            <span className="px-2 py-0.5 rounded bg-black/70 border border-white/10">
+                              {call.data_gravacao || '17/11/2026'}
+                            </span>
+                            {call.duracao && (
+                              <span className="px-2 py-0.5 rounded bg-black/70 border border-white/10 text-amber-300 font-bold">
+                                {call.duracao}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Informações da Call */}
+                        <h4 className="text-white font-bold text-sm leading-snug group-hover:text-brand-blue transition-colors mb-1.5 line-clamp-2">
+                          {call.titulo}
+                        </h4>
+
+                        {call.closer && (
+                          <div className="flex items-center gap-1.5 text-xs text-white/60 mb-2">
+                            <User size={12} className="text-brand-blue" />
+                            <span>Closer: <strong className="text-white/80">{call.closer}</strong></span>
+                          </div>
+                        )}
+
+                        {call.descricao && (
+                          <p className="text-xs text-white/50 line-clamp-3 leading-relaxed mb-3">
+                            {call.descricao}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Ações do Card */}
+                      <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
+                        <span className="text-brand-blue group-hover:text-blue-400 font-bold flex items-center gap-1 text-[11px]">
+                          <Play size={11} className="fill-current" />
+                          Assistir na plataforma
+                        </span>
+
+                        <a
+                          href={call.drive_url || `https://drive.google.com/file/d/${call.drive_file_id}/view`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={e => e.stopPropagation()}
+                          className="text-white/40 hover:text-white flex items-center gap-1 text-[11px] p-1 transition-colors"
+                          title="Abrir no Google Drive"
+                        >
+                          <span>Drive</span>
+                          <ExternalLink size={11} />
+                        </a>
                       </div>
                     </div>
-                    <h3 className="text-white font-bold mb-1">Análise de Call - Exemplo {i}</h3>
-                    <p className="text-xs text-white/40">Duração: 45 min • Closer: João</p>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
           {activeTab === 'treinamentos' && (
-            <div className="p-8 max-w-5xl mx-auto animate-in fade-in">
-              <h2 className="text-2xl font-display font-bold text-white mb-2">Treinamentos e Aulas</h2>
-              <p className="text-white/50 mb-8">Trilha de capacitação técnica e comportamental.</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="bg-[#151515] border border-white/10 rounded-2xl p-4 hover:border-brand-blue/30 transition-all cursor-pointer group">
-                    <div className="aspect-video bg-[#0a0a0a] rounded-lg mb-4 flex items-center justify-center border border-white/5 relative overflow-hidden">
-                      <div className="absolute inset-0 opacity-20 bg-gradient-to-br from-brand-blue to-transparent"></div>
-                      <div className="w-12 h-12 rounded-full bg-brand-blue/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <div className="w-0 h-0 border-t-8 border-t-transparent border-l-[12px] border-l-brand-blue border-b-8 border-b-transparent ml-1"></div>
-                      </div>
-                    </div>
-                    <h3 className="text-white font-bold mb-1">Módulo {i} - Processo Comercial</h3>
-                    <p className="text-xs text-white/40">Aula teórica sobre contorno de objeções.</p>
+            <div className="p-4 sm:p-8 max-w-6xl mx-auto animate-in fade-in space-y-6">
+              {/* Banner conectando com as Calls */}
+              <div className="bg-gradient-to-r from-purple-950/40 via-[#12131a] to-blue-950/30 border border-purple-500/30 rounded-3xl p-5 sm:p-7 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-5">
+                <div>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 mb-2">
+                    <GraduationCap size={13} />
+                    Trilha Prática & Teórica
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-display font-black text-white">
+                    Treinamentos e Aulas Comerciais
+                  </h2>
+                  <p className="text-xs sm:text-sm text-white/60 mt-1 max-w-2xl leading-relaxed">
+                    Aprenda a metodologia dos 22 capítulos do Playbook e veja a execução prática gravada nas reuniões com clientes reais.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setActiveTab('calls')}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-brand-blue hover:bg-blue-600 text-white text-xs font-bold transition-all shadow-lg shadow-brand-blue/20 shrink-0 cursor-pointer"
+                >
+                  <Headphones size={15} />
+                  <span>Ver Calls Gravadas no Drive</span>
+                </button>
+              </div>
+
+              {/* Módulos de Treinamento */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div 
+                  onClick={() => setActiveTab('calls')}
+                  className="bg-[#121319] hover:bg-[#161822] border border-white/10 hover:border-brand-blue/50 rounded-2xl p-5 shadow-xl transition-all cursor-pointer group"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-brand-blue/20 text-brand-blue flex items-center justify-center font-bold text-sm mb-3">
+                    01
                   </div>
-                ))}
+                  <h3 className="text-white font-bold text-base mb-1 group-hover:text-brand-blue transition-colors">
+                    Reuniões Reais de Lei Seca
+                  </h3>
+                  <p className="text-xs text-white/50 leading-relaxed mb-4">
+                    Assista a gravações completas com análise de postura, escuta ativa e condução para assinatura do contrato.
+                  </p>
+                  <span className="text-brand-blue text-xs font-bold flex items-center gap-1">
+                    Acessar Gravações →
+                  </span>
+                </div>
+
+                <div 
+                  onClick={() => setActiveTab('playbook')}
+                  className="bg-[#121319] hover:bg-[#161822] border border-white/10 hover:border-purple-500/50 rounded-2xl p-5 shadow-xl transition-all cursor-pointer group"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center font-bold text-sm mb-3">
+                    02
+                  </div>
+                  <h3 className="text-white font-bold text-base mb-1 group-hover:text-purple-300 transition-colors">
+                    Playbook Comercial (22 Capítulos)
+                  </h3>
+                  <p className="text-xs text-white/50 leading-relaxed mb-4">
+                    Metodologia completa de qualificação pelo SDR, cálculo do valor da causa e fechamento pelo Closer.
+                  </p>
+                  <span className="text-purple-400 text-xs font-bold flex items-center gap-1">
+                    Abrir Playbook →
+                  </span>
+                </div>
+
+                <a 
+                  href={DRIVE_FOLDER_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-[#121319] hover:bg-[#161822] border border-white/10 hover:border-emerald-500/50 rounded-2xl p-5 shadow-xl transition-all cursor-pointer group"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm mb-3">
+                    03
+                  </div>
+                  <h3 className="text-white font-bold text-base mb-1 group-hover:text-emerald-400 transition-colors">
+                    Pasta no Google Drive
+                  </h3>
+                  <p className="text-xs text-white/50 leading-relaxed mb-4">
+                    Upload e download direto dos arquivos brutos em MP4 com alta definição e acesso liberado para o time.
+                  </p>
+                  <span className="text-emerald-400 text-xs font-bold flex items-center gap-1">
+                    Abrir Drive Oficial ↗
+                  </span>
+                </a>
               </div>
             </div>
           )}
-        </main>
+          
+          {/* Modais de Reprodução e Cadastro */}
+          <CallsPlayerModal 
+            call={selectedCall} 
+            onClose={() => setSelectedCall(null)} 
+          />
+
+          <AddCallModal 
+            isOpen={showAddModal} 
+            onClose={() => setShowAddModal(false)} 
+            onSave={handleSaveNewCall} 
+          />
+          </main>
       </div>
     </div>
   );
