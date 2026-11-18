@@ -148,8 +148,8 @@ export default function Dashboard({
   const isCloser = role === 'closer';
   const fechados = Number(metrics?.contratosFechados || 0);
   const assinados = Number(metrics?.contratosAssinados || 0);
-  const ticket = Number(metrics?.honorariosMedios || 1517);
-  const faturamentoFechado = fechados * ticket;
+  const ticket = Number(metrics?.honorariosMedios || 1327.78);
+  const faturamentoFechado = metrics?.faturamentoTotal ? Number(metrics.faturamentoTotal) : (fechados * ticket);
   const faturamentoAguardando = assinados * ticket;
 
   // Calcula conversões entre etapas para o mini funil

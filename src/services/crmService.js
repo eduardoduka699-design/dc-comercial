@@ -1,5 +1,5 @@
-import { supabase } from '../supabaseClient';
-import { baseMetrics } from '../data/mockData';
+import { supabase } from '../supabaseClient.js';
+import { baseMetrics } from '../data/mockData.js';
 
 const LOCAL_STORAGE_METRICS_KEY = 'dc-leiseca-metrics';
 const LOCAL_STORAGE_LEADS_KEY = 'dc-leiseca-crm-leads';
@@ -243,9 +243,14 @@ export const crmService = {
       }
     });
 
+    const defaultTkm = 1327.78; // Benchmark oficial do Tráfego Pago Novembro (R$ 11.950 / 9 vendas)
     const honorariosMedios = closerFechados > 0 && totalHonorarios > 0
       ? Math.round(totalHonorarios / closerFechados)
-      : 1517;
+      : defaultTkm;
+
+    const faturamentoTotalReal = totalHonorarios > 0
+      ? totalHonorarios
+      : Math.round(closerFechados * defaultTkm);
 
     return {
       sdr: {
@@ -259,9 +264,10 @@ export const crmService = {
         contratosEnviados: closerEnviados,
         contratosAssinados: closerAssinados,
         contratosFechados: closerFechados,
-        honorariosMedios: honorariosMedios
+        honorariosMedios: Math.round(honorariosMedios),
+        faturamentoTotal: faturamentoTotalReal
       },
-      totalHonorarios
+      totalHonorarios: faturamentoTotalReal
     };
   },
 

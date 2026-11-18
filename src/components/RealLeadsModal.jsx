@@ -473,11 +473,11 @@ export default function RealLeadsModal({ isOpen, onClose, leads = [], onRefresh,
                   </div>
 
                   <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
-                    {lead.valor_honorarios > 0 && (
+                    {(Number(lead.valor_honorarios) > 0 || isPago) && (
                       <div className="text-left sm:text-right">
                         <span className="text-[10px] uppercase font-bold text-white/40 block">Honorários</span>
                         <span className="text-sm font-bold text-emerald-400 font-mono">
-                          {Number(lead.valor_honorarios).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          {(Number(lead.valor_honorarios) > 0 ? Number(lead.valor_honorarios) : 1327.78).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </span>
                       </div>
                     )}

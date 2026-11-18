@@ -12,6 +12,7 @@ import DatePicker from '../components/DatePicker';
 import RealLeadsModal from '../components/RealLeadsModal';
 import { defaultGoals, baseMetrics } from '../data/mockData';
 import { crmService } from '../services/crmService';
+import { supabase } from '../supabaseClient';
 
 export default function ComercialModule({ currentUser }) {
   const navigate = useNavigate();
@@ -58,6 +59,35 @@ export default function ComercialModule({ currentUser }) {
   const [modalStageFilter, setModalStageFilter] = useState('all');
   const [syncingCrm, setSyncingCrm] = useState(false);
   const [chartViewMode, setChartViewMode] = useState('day'); // 'day' | 'week'
+
+  // Dados consolidados oficiais da Assessoria de Growth & Marketing (Novembro)
+  const [mktRow, setMktRow] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dc-leiseca-mkt-planilha-v2');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.find(r => r.mes?.toLowerCase().includes('novembro')) || null;
+      }
+    } catch { return null; }
+    return null;
+  });
+
+  useEffect(() => {
+    const fetchMktPlanilha = async () => {
+      if (supabase) {
+        try {
+          const { data } = await supabase.from('marketing_planilha').select('*');
+          if (data && data.length > 0) {
+            const nov = data.find(r => r.mes?.toLowerCase().includes('novembro'));
+            if (nov) setMktRow(nov);
+          }
+        } catch (e) {
+          console.error('Erro ao buscar marketing_planilha para Comercial:', e);
+        }
+      }
+    };
+    fetchMktPlanilha();
+  }, []);
 
   // Sincroniza a classe dark no elemento raiz HTML para tema consistente
   useEffect(() => {
@@ -221,6 +251,29 @@ export default function ComercialModule({ currentUser }) {
       });
 
       const liveMetrics = crmService.calculateMetricsFromLeads(filteredLeads, false);
+
+      // Quando o filtro é Mês e temos a linha consolidada oficial de Growth & Marketing
+      if (dateFilter === 'Mês' && !customDate && mktRow) {
+        if (activeTab === 'sdr') {
+          return {
+            leadsRecebidos: Number(mktRow.leads) || 468,
+            motoristasContatados: Number(mktRow.leads) || 468,
+            casosQualificados: liveMetrics?.sdr?.casosQualificados || 97,
+            consultasAgendadas: Number(mktRow.reunioes_marcadas) || 64
+          };
+        }
+        if (activeTab === 'closer') {
+          return {
+            consultasRealizadas: Number(mktRow.reunioes_realizadas) || 63,
+            contratosEnviados: Number(mktRow.reunioes_realizadas) || 63,
+            contratosAssinados: liveMetrics?.closer?.contratosAssinados || 1,
+            contratosFechados: Number(mktRow.vendas) || 9,
+            honorariosMedios: Math.round(Number(mktRow.tkm) || 1327.78),
+            faturamentoTotal: Number(mktRow.valor_vendas) || 11950.00
+          };
+        }
+      }
+
       if (liveMetrics && liveMetrics[activeTab]) {
         const current = liveMetrics[activeTab];
         const newMetrics = {};
@@ -231,6 +284,28 @@ export default function ComercialModule({ currentUser }) {
           newMetrics[k] = current[k];
         });
         return newMetrics;
+      }
+    }
+
+    // Fallback caso não haja leads do CRM carregados mas esteja no filtro de Mês
+    if (dateFilter === 'Mês' && !customDate && mktRow) {
+      if (activeTab === 'sdr') {
+        return {
+          leadsRecebidos: Number(mktRow.leads) || 468,
+          motoristasContatados: Number(mktRow.leads) || 468,
+          casosQualificados: 97,
+          consultasAgendadas: Number(mktRow.reunioes_marcadas) || 64
+        };
+      }
+      if (activeTab === 'closer') {
+        return {
+          consultasRealizadas: Number(mktRow.reunioes_realizadas) || 63,
+          contratosEnviados: Number(mktRow.reunioes_realizadas) || 63,
+          contratosAssinados: 1,
+          contratosFechados: Number(mktRow.vendas) || 9,
+          honorariosMedios: Math.round(Number(mktRow.tkm) || 1327.78),
+          faturamentoTotal: Number(mktRow.valor_vendas) || 11950.00
+        };
       }
     }
 
