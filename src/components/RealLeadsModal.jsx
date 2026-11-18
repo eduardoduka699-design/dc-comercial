@@ -28,8 +28,11 @@ export default function RealLeadsModal({ isOpen, onClose, leads = [], onRefresh,
     const hasTarget = tagsStr.includes('novembro');
     if (hasOther && !hasTarget) return false;
     if (hasTarget) return true;
-    const funnelKeywords = ['atendimento', 'contato', 'qualific', 'reuni', 'agend', 'proposta', 'contrato', 'pagamento', 'pago', 'fechad', 'ganho'];
-    return tags.some(t => funnelKeywords.some(k => t.includes(k)));
+    const dtStr = lead.created_at || lead.updated_at;
+    if (!dtStr) return true;
+    const leadDate = new Date(dtStr);
+    const now = new Date();
+    return leadDate.getMonth() === now.getMonth() && leadDate.getFullYear() === now.getFullYear();
   };
 
   const trafficLeadsList = leads.filter(isTrafficLead);

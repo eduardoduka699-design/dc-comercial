@@ -117,14 +117,7 @@ export const crmService = {
       return true;
     }
 
-    // Fallback caso não tenha a palavra do mês na tag, mas tenha tag de funil de Lei Seca
-    const funnelKeywords = [
-      'atendimento', 'contato', 'qualific', 'reuni', 'agend', 
-      'proposta', 'contrato', 'pagamento', 'pago', 'fechad', 'ganho'
-    ];
-    const hasFunnelTag = tags.some(t => funnelKeywords.some(k => t.includes(k)));
-    if (!hasFunnelTag) return false;
-
+    // 4. Se chegou no mês corrente (novembro) e não pertence a outro mês nem é orgânico/indicação:
     const dtStr = lead.created_at || lead.updated_at;
     if (!dtStr) return false;
     const leadDate = new Date(dtStr);
