@@ -29,6 +29,7 @@ import {
   Tooltip, 
   Legend 
 } from 'recharts';
+import { supabase } from '../supabaseClient';
 
 // Dados históricos fiéis ao modelo da planilha de Assessoria - Tráfego Pago
 const INITIAL_PLANILHA = [
@@ -141,10 +142,105 @@ export default function MarketingModule() {
   const [selectedYear, setSelectedYear] = useState('Todos');
 
   useEffect(() => {
+    let isMounted = true;
+    const loadCloudData = async () => {
+      if (!supabase) return;
+      try {
+        const { data, error } = await supabase
+          .from('marketing_planilha')
+          .select('*')
+          .order('id', { ascending: true });
+
+        if (!error && Array.isArray(data) && data.length > 0 && isMounted) {
+          const mappedCloud = data.map(r => ({
+            id: r.id,
+            num: r.num,
+            mes: r.mes,
+            investimento: Number(r.investimento) || 0,
+            leads: Number(r.leads) || 0,
+            cpl: Number(r.cpl) || 0,
+            cplManual: r.cpl_manual !== null && r.cpl_manual !== undefined ? Number(r.cpl_manual) : null,
+            reunioesMarcadas: Number(r.reunioes_marcadas) || 0,
+            reunioesRealizadas: Number(r.reunioes_realizadas) || 0,
+            vendas: Number(r.vendas) || 0,
+            tkm: Number(r.tkm) || 0,
+            valorVendas: Number(r.valor_vendas) || 0
+          }));
+
+          setPlanilha(prev => {
+            const localSaved = (() => {
+              try {
+                const s = localStorage.getItem('dc-leiseca-mkt-planilha-v2');
+                return s ? JSON.parse(s) : null;
+              } catch { return null; }
+            })();
+
+            if (Array.isArray(localSaved) && localSaved.length > 0) {
+              const merged = mappedCloud.map(cloudRow => {
+                const localRow = localSaved.find(lr => lr.id === cloudRow.id || lr.mes === cloudRow.mes);
+                // Se o local tem dados reais preenchidos e a nuvem está zerada, prioriza o local e envia para a nuvem
+                if (localRow && (localRow.investimento > 0 || localRow.leads > 0 || localRow.reunioesRealizadas > 0 || localRow.vendas > 0)) {
+                  if (cloudRow.investimento === 0 && cloudRow.leads === 0) {
+                    supabase.from('marketing_planilha').upsert({
+                      id: localRow.id,
+                      num: localRow.num,
+                      mes: localRow.mes,
+                      investimento: localRow.investimento || 0,
+                      leads: localRow.leads || 0,
+                      cpl: localRow.cpl || 0,
+                      cpl_manual: localRow.cplManual || null,
+                      reunioes_marcadas: localRow.reunioesMarcadas || 0,
+                      reunioes_realizadas: localRow.reunioesRealizadas || 0,
+                      vendas: localRow.vendas || 0,
+                      tkm: localRow.tkm || 0,
+                      valor_vendas: localRow.valorVendas || 0,
+                      updated_at: new Date().toISOString()
+                    }).then();
+                    return localRow;
+                  }
+                }
+                return cloudRow;
+              });
+              return merged;
+            }
+            return mappedCloud;
+          });
+        }
+      } catch (err) {
+        console.warn('Erro ao carregar marketing_planilha do Supabase:', err);
+      }
+    };
+
+    loadCloudData();
+    return () => { isMounted = false; };
+  }, []);
+
+  useEffect(() => {
     try {
       localStorage.setItem('dc-leiseca-mkt-planilha-v2', JSON.stringify(planilha));
     } catch (e) {
       console.error('Erro ao salvar planilha no localStorage:', e);
+    }
+
+    // Persiste também no Supabase para garantir sincronização entre dispositivos
+    if (supabase && Array.isArray(planilha) && planilha.length > 0) {
+      const upsertRows = planilha.map(r => ({
+        id: r.id,
+        num: r.num,
+        mes: r.mes,
+        investimento: Number(r.investimento) || 0,
+        leads: Number(r.leads) || 0,
+        cpl: Number(r.cpl) || 0,
+        cpl_manual: r.cplManual !== null && r.cplManual !== undefined ? Number(r.cplManual) : null,
+        reunioes_marcadas: Number(r.reunioesMarcadas) || 0,
+        reunioes_realizadas: Number(r.reunioesRealizadas) || 0,
+        vendas: Number(r.vendas) || 0,
+        tkm: Number(r.tkm) || 0,
+        valor_vendas: Number(r.valorVendas) || 0,
+        updated_at: new Date().toISOString()
+      }));
+
+      supabase.from('marketing_planilha').upsert(upsertRows).then();
     }
   }, [planilha]);
 
